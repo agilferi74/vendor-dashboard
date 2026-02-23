@@ -30,8 +30,34 @@ export const vendors: Vendor[] = [
 ]
 
 export const services: Service[] = [
-    { id: "1", name: "Hosting", vendorId: "1", active: true },
-    { id: "2", name: "Maintenance", vendorId: "2", active: false },
+    {
+        id: "1",
+        vendorId: "1",
+        providerServiceId: "SRV-001",
+        serviceType: "Jaringan Lastmile",
+        location: "Jakarta DC 1",
+        capacity: "100 Mbps",
+        otpCost: 5000000,
+        mtcCost: 2000000,
+        unit: "Mbps",
+        active: true,
+        internalPic: "Agil",
+        documentUrl: "#",
+    },
+    {
+        id: "2",
+        vendorId: "2",
+        providerServiceId: "SRV-002",
+        serviceType: "Cloud Storage",
+        location: "Bandung",
+        capacity: "2 TB",
+        otpCost: 2000000,
+        mtcCost: 1500000,
+        unit: "TB",
+        active: false,
+        internalPic: "Rudi",
+        documentUrl: "#",
+    },
 ]
 
 export const payments: Payment[] = [
@@ -47,4 +73,31 @@ export const payments: Payment[] = [
         amount: 3000000,
         dueDate: "2026-02-25",
     },
+]
+
+export const SERVICE_TYPES = [
+    "Jaringan Lastmile",
+    "Internet Backup",
+    "IP Transit",
+    "Internet Exchange",
+    "Shared Internet Backup",
+    "Collocation Rack",
+    "Jaringan Backhaul",
+    "Manage Service",
+    "Interkoneksi",
+    "Domain",
+    "Internet Uplink",
+    "TV Subscription",
+    "Internet Selluler",
+    "Video Conference",
+    "Cloud Storage",
+    "Infrastruktur",
+    "BTS Rent",
+    "Kantor Rent",
+    "Air, Listrik, Telepon",
+    "Iuran",
+    "Value Added Service",
+    "Server",
+    "IP Public",
+    "Pajak Kendaraan",
 ]

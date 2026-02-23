@@ -14,9 +14,17 @@ export interface Vendor {
 
 export interface Service {
     id: string
-    name: string
     vendorId: string
+    providerServiceId: string
+    serviceType: string
+    location: string
+    capacity: string
+    otpCost: number
+    mtcCost: number
+    unit: string
     active: boolean
+    internalPic: string
+    documentUrl: string
 }
 
 export interface Payment {
