@@ -29,8 +29,10 @@ export default function VendorsPage() {
         return vendors.filter((vendor) =>
             vendor.name.toLowerCase().includes(search.toLowerCase()) ||
             vendor.npwp.toLowerCase().includes(search.toLowerCase()) ||
-            vendor.picCommercial.includes(search) ||
-            vendor.picTechnical.includes(search)
+            vendor.picCommercialName.toLowerCase().includes(search.toLowerCase()) ||
+            vendor.picTechnicalName.toLowerCase().includes(search.toLowerCase()) ||
+            vendor.picCommercialPhone.includes(search) ||
+            vendor.picTechnicalPhone.includes(search)
         )
     }, [vendors, search])
 
@@ -84,11 +86,39 @@ export default function VendorsPage() {
                         <TableBody>
                             {paginatedVendors.map((vendor) => (
                                 <TableRow key={vendor.id}>
-                                    <TableCell>{vendor.name}</TableCell>
-                                    <TableCell>{vendor.address}</TableCell>
-                                    <TableCell>{vendor.picCommercial}</TableCell>
-                                    <TableCell>{vendor.picTechnical}</TableCell>
-                                    <TableCell>{vendor.npwp}</TableCell>
+                                    <TableCell className="font-medium">
+                                        {vendor.name}
+                                    </TableCell>
+
+                                    <TableCell>
+                                        {vendor.address}
+                                    </TableCell>
+
+                                    <TableCell>
+                                        <div className="text-sm">
+                                            <div className="font-medium">
+                                                {vendor.picCommercialName}
+                                            </div>
+                                            <div className="text-muted-foreground">
+                                                {vendor.picCommercialPhone}
+                                            </div>
+                                        </div>
+                                    </TableCell>
+
+                                    <TableCell>
+                                        <div className="text-sm">
+                                            <div className="font-medium">
+                                                {vendor.picTechnicalName}
+                                            </div>
+                                            <div className="text-muted-foreground">
+                                                {vendor.picTechnicalPhone}
+                                            </div>
+                                        </div>
+                                    </TableCell>
+
+                                    <TableCell>
+                                        {vendor.npwp}
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

@@ -2,8 +2,13 @@ export interface Vendor {
     id: string
     name: string
     address: string
-    picCommercial: string
-    picTechnical: string
+
+    picCommercialName: string
+    picCommercialPhone: string
+
+    picTechnicalName: string
+    picTechnicalPhone: string
+
     npwp: string
 }
 

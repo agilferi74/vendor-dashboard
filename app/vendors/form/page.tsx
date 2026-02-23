@@ -12,8 +12,10 @@ export default function NewVendorPage() {
     const [form, setForm] = useState({
         name: "",
         address: "",
-        picCommercial: "",
-        picTechnical: "",
+        picCommercialName: "",
+        picCommercialPhone: "",
+        picTechnicalName: "",
+        picTechnicalPhone: "",
         npwp: "",
     })
 
@@ -52,18 +54,50 @@ export default function NewVendorPage() {
                     </div>
 
                     <div>
-                        <label className="text-sm font-medium">No PIC Komersial</label>
+                        <label className="text-sm font-medium">
+                            Nama PIC Komersial
+                        </label>
                         <Input
-                            value={form.picCommercial}
-                            onChange={(e) => handleChange("picCommercial", e.target.value)}
+                            value={form.picCommercialName}
+                            onChange={(e) =>
+                                handleChange("picCommercialName", e.target.value)
+                            }
                         />
                     </div>
 
                     <div>
-                        <label className="text-sm font-medium">No PIC Teknikal</label>
+                        <label className="text-sm font-medium">
+                            No PIC Komersial
+                        </label>
                         <Input
-                            value={form.picTechnical}
-                            onChange={(e) => handleChange("picTechnical", e.target.value)}
+                            value={form.picCommercialPhone}
+                            onChange={(e) =>
+                                handleChange("picCommercialPhone", e.target.value)
+                            }
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-sm font-medium">
+                            Nama PIC Teknikal
+                        </label>
+                        <Input
+                            value={form.picTechnicalName}
+                            onChange={(e) =>
+                                handleChange("picTechnicalName", e.target.value)
+                            }
+                        />
+                    </div>
+
+                    <div>
+                        <label className="text-sm font-medium">
+                            No PIC Teknikal
+                        </label>
+                        <Input
+                            value={form.picTechnicalPhone}
+                            onChange={(e) =>
+                                handleChange("picTechnicalPhone", e.target.value)
+                            }
                         />
                     </div>
 

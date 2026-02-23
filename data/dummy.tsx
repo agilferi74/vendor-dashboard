@@ -5,16 +5,26 @@ export const vendors: Vendor[] = [
         id: "1",
         name: "PT Maju Jaya",
         address: "Jl. Sudirman No. 10, Jakarta",
-        picCommercial: "081234567890",
-        picTechnical: "089876543210",
+
+        picCommercialName: "Budi Santoso",
+        picCommercialPhone: "081234567890",
+
+        picTechnicalName: "Andi Wijaya",
+        picTechnicalPhone: "089876543210",
+
         npwp: "01.234.567.8-999.000",
     },
     {
         id: "2",
         name: "PT Teknologi Hebat",
         address: "Jl. Gatot Subroto No. 20, Bandung",
-        picCommercial: "081122334455",
-        picTechnical: "082233445566",
+
+        picCommercialName: "Siti Rahma",
+        picCommercialPhone: "081122334455",
+
+        picTechnicalName: "Rudi Hartono",
+        picTechnicalPhone: "082233445566",
+
         npwp: "02.345.678.9-888.000",
     },
 ]
