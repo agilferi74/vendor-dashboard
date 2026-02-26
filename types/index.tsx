@@ -24,7 +24,8 @@ export interface Service {
     unit: string
     active: boolean
     internalPic: string
-    documentUrl: string
+    startDate: string
+    endDate: string
 }
 
 export interface Payment {

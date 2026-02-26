@@ -45,14 +45,14 @@ export default function VendorsPage() {
     )
 
     return (
-        <div className="flex">
+        <div className="flex min-h-screen bg-gray-50">
             <Sidebar />
 
-            <div className="p-10 w-full">
+            <div className="flex-1 p-4 sm:p-6 lg:p-10 w-full pt-16 lg:pt-4 sm:pt-6">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">Vendor Management</h1>
-                    <Button onClick={() => router.push("/vendors/form")}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h1 className="text-xl sm:text-2xl font-bold">Vendor Management</h1>
+                    <Button onClick={() => router.push("/vendors/form")} className="w-full sm:w-auto">
                         + Add Vendor
                     </Button>
                 </div>
@@ -66,36 +66,37 @@ export default function VendorsPage() {
                             setSearch(e.target.value)
                             setCurrentPage(1)
                         }}
-                        className="max-w-sm"
+                        className="w-full sm:max-w-sm"
                     />
                 </div>
 
                 {/* Table */}
-                <div className="border rounded-lg">
+                <div className="border rounded-lg overflow-x-auto bg-white">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Nama Vendor</TableHead>
-                                <TableHead>Alamat</TableHead>
-                                <TableHead>PIC Komersial</TableHead>
-                                <TableHead>PIC Teknikal</TableHead>
-                                <TableHead>NPWP</TableHead>
+                                <TableHead className="whitespace-nowrap">Nama Vendor</TableHead>
+                                <TableHead className="whitespace-nowrap">Alamat</TableHead>
+                                <TableHead className="whitespace-nowrap">PIC Komersial</TableHead>
+                                <TableHead className="whitespace-nowrap">PIC Teknikal</TableHead>
+                                <TableHead className="whitespace-nowrap">NPWP</TableHead>
+                                <TableHead className="whitespace-nowrap">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
 
                         <TableBody>
                             {paginatedVendors.map((vendor) => (
                                 <TableRow key={vendor.id}>
-                                    <TableCell className="font-medium">
+                                    <TableCell className="font-medium whitespace-nowrap">
                                         {vendor.name}
                                     </TableCell>
 
-                                    <TableCell>
+                                    <TableCell className="max-w-xs truncate">
                                         {vendor.address}
                                     </TableCell>
 
                                     <TableCell>
-                                        <div className="text-sm">
+                                        <div className="text-sm whitespace-nowrap">
                                             <div className="font-medium">
                                                 {vendor.picCommercialName}
                                             </div>
@@ -106,7 +107,7 @@ export default function VendorsPage() {
                                     </TableCell>
 
                                     <TableCell>
-                                        <div className="text-sm">
+                                        <div className="text-sm whitespace-nowrap">
                                             <div className="font-medium">
                                                 {vendor.picTechnicalName}
                                             </div>
@@ -116,8 +117,18 @@ export default function VendorsPage() {
                                         </div>
                                     </TableCell>
 
-                                    <TableCell>
+                                    <TableCell className="whitespace-nowrap">
                                         {vendor.npwp}
+                                    </TableCell>
+
+                                    <TableCell className="whitespace-nowrap">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => router.push(`/vendors/form?id=${vendor.id}`)}
+                                        >
+                                            Edit
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -126,26 +137,28 @@ export default function VendorsPage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="flex justify-end gap-2 mt-6">
-                    <Button
-                        variant="outline"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage((prev) => prev - 1)}
-                    >
-                        Prev
-                    </Button>
-
-                    <span className="flex items-center px-4 text-sm">
+                <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-6">
+                    <span className="text-sm order-2 sm:order-1">
                         Page {currentPage} of {totalPages}
                     </span>
-
-                    <Button
-                        variant="outline"
-                        disabled={currentPage === totalPages}
-                        onClick={() => setCurrentPage((prev) => prev + 1)}
-                    >
-                        Next
-                    </Button>
+                    <div className="flex gap-2 order-1 sm:order-2">
+                        <Button
+                            variant="outline"
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage((prev) => prev - 1)}
+                            className="w-20"
+                        >
+                            Prev
+                        </Button>
+                        <Button
+                            variant="outline"
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage((prev) => prev + 1)}
+                            className="w-20"
+                        >
+                            Next
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
