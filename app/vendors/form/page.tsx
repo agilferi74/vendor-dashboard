@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Sidebar from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { vendors } from "@/data/dummy"
 
-export default function NewVendorPage() {
+function VendorFormContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const vendorId = searchParams.get("id")
@@ -207,5 +207,13 @@ export default function NewVendorPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function NewVendorPage() {
+    return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+            <VendorFormContent />
+        </Suspense>
     )
 }

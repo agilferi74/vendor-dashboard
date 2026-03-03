@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Sidebar from "@/components/sidebar"
 import { vendors, SERVICE_TYPES, services } from "@/data/dummy"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-export default function NewServicePage() {
+function ServiceFormContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const serviceId = searchParams.get("id")
@@ -331,5 +331,13 @@ export default function NewServicePage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function NewServicePage() {
+    return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+            <ServiceFormContent />
+        </Suspense>
     )
 }
