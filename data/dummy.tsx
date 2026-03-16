@@ -1,4 +1,4 @@
-import { Vendor, Service, Payment, Contract } from "@/types"
+import { Vendor, Service, Contract, Invoice } from "@/types"
 
 export const vendors: Vendor[] = [
     {
@@ -266,21 +266,6 @@ export const services: Service[] = [
     },
 ]
 
-export const payments: Payment[] = [
-    {
-        id: "1",
-        vendorId: "1",
-        amount: 2000000,
-        dueDate: "2026-03-15",
-    },
-    {
-        id: "2",
-        vendorId: "2",
-        amount: 3000000,
-        dueDate: "2026-02-25",
-    },
-]
-
 export const contracts: Contract[] = [
     {
         id: "1",
@@ -349,4 +334,120 @@ export const SERVICE_TYPES = [
     "Server",
     "IP Public",
     "Pajak Kendaraan",
+]
+
+
+export const invoices: Invoice[] = [
+    {
+        id: "1",
+        serviceId: "1",
+        paymentType: "MTC",
+        invoiceNumber: "INV-2025-001",
+        period: "2025-01",
+        invoiceAmount: 2000000,
+        paidAmount: 2000000,
+        invoiceDate: "2025-01-20",
+        dueDate: "2025-02-20",
+        paymentDate: "2025-02-15",
+        invoiceDocumentUrl: "/documents/inv-001.pdf",
+        paymentProofUrl: "/documents/proof-001.pdf",
+    },
+    {
+        id: "2",
+        serviceId: "1",
+        paymentType: "MTC",
+        invoiceNumber: "INV-2025-002",
+        period: "2025-02",
+        invoiceAmount: 2000000,
+        paidAmount: 0,
+        invoiceDate: "2025-02-20",
+        dueDate: "2025-03-20",
+        paymentDate: "",
+        invoiceDocumentUrl: "/documents/inv-002.pdf",
+        paymentProofUrl: "",
+    },
+    {
+        id: "3",
+        serviceId: "3",
+        paymentType: "OTP",
+        invoiceNumber: "INV-2025-003",
+        period: "",
+        invoiceAmount: 10000000,
+        paidAmount: 10000000,
+        invoiceDate: "2025-03-05",
+        dueDate: "2025-04-05",
+        paymentDate: "2025-03-28",
+        invoiceDocumentUrl: "/documents/inv-003.pdf",
+        paymentProofUrl: "/documents/proof-003.pdf",
+    },
+    {
+        id: "4",
+        serviceId: "4",
+        paymentType: "MTC",
+        invoiceNumber: "INV-2025-004",
+        period: "2025-03",
+        invoiceAmount: 8000000,
+        paidAmount: 8000000,
+        invoiceDate: "2025-03-01",
+        dueDate: "2025-04-01",
+        paymentDate: "2025-03-25",
+        invoiceDocumentUrl: "/documents/inv-004.pdf",
+        paymentProofUrl: "/documents/proof-004.pdf",
+    },
+    {
+        id: "5",
+        serviceId: "6",
+        paymentType: "MTC",
+        invoiceNumber: "INV-2025-005",
+        period: "2025-01",
+        invoiceAmount: 12000000,
+        paidAmount: 0,
+        invoiceDate: "2025-01-25",
+        dueDate: "2025-02-25",
+        paymentDate: "",
+        invoiceDocumentUrl: "/documents/inv-005.pdf",
+        paymentProofUrl: "",
+    },
+    {
+        id: "6",
+        serviceId: "7",
+        paymentType: "OTP",
+        invoiceNumber: "INV-2025-006",
+        period: "",
+        invoiceAmount: 25000000,
+        paidAmount: 25000000,
+        invoiceDate: "2024-11-20",
+        dueDate: "2024-12-20",
+        paymentDate: "2024-12-10",
+        invoiceDocumentUrl: "/documents/inv-006.pdf",
+        paymentProofUrl: "/documents/proof-006.pdf",
+    },
+    {
+        id: "7",
+        serviceId: "5",
+        paymentType: "MTC",
+        invoiceNumber: "INV-2025-007",
+        period: "2025-02",
+        invoiceAmount: 1800000,
+        paidAmount: 1800000,
+        invoiceDate: "2025-02-15",
+        dueDate: "2025-03-15",
+        paymentDate: "2025-03-10",
+        invoiceDocumentUrl: "/documents/inv-007.pdf",
+        paymentProofUrl: "/documents/proof-007.pdf",
+    },
+    {
+        id: "8",
+        serviceId: "9",
+        paymentType: "OTP",
+        invoiceNumber: "INV-2025-008",
+        period: "",
+        invoiceAmount: 1000000,
+        paidAmount: 500000,
+        invoiceDate: "2025-02-05",
+        dueDate: "2025-03-05",
+        paymentDate: "",
+        invoiceDocumentUrl: "/documents/inv-008.pdf",
+        paymentProofUrl: "",
+    },
 ]

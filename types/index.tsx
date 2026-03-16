@@ -43,3 +43,20 @@ export interface Contract {
     endDate: string
     documentUrl: string
 }
+
+export type PaymentType = "OTP" | "MTC"
+
+export interface Invoice {
+    id: string
+    serviceId: string
+    paymentType: PaymentType
+    invoiceNumber: string
+    period: string
+    invoiceAmount: number
+    paidAmount: number
+    invoiceDate: string
+    dueDate: string
+    paymentDate: string
+    invoiceDocumentUrl: string
+    paymentProofUrl: string
+}

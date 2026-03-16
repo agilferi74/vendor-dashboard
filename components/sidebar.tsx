@@ -58,8 +58,8 @@ export default function Sidebar() {
                         </Link>
                     </li>
                     <li>
-                        <Link href="/payments" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
-                            Payments
+                        <Link href="/invoices" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
+                            Invoices
                         </Link>
                     </li>
                 </ul>
