@@ -53,6 +53,11 @@ export default function Sidebar() {
                         </Link>
                     </li>
                     <li>
+                        <Link href="/contracts" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
+                            Contracts
+                        </Link>
+                    </li>
+                    <li>
                         <Link href="/payments" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
                             Payments
                         </Link>

@@ -1,4 +1,4 @@
-import { Vendor, Service, Payment } from "@/types"
+import { Vendor, Service, Payment, Contract } from "@/types"
 
 export const vendors: Vendor[] = [
     {
@@ -278,6 +278,49 @@ export const payments: Payment[] = [
         vendorId: "2",
         amount: 3000000,
         dueDate: "2026-02-25",
+    },
+]
+
+export const contracts: Contract[] = [
+    {
+        id: "1",
+        serviceId: "1",
+        title: "Kontrak Jaringan Lastmile Jakarta DC 1",
+        startDate: "2025-01-15",
+        endDate: "2026-01-14",
+        documentUrl: "/documents/contract-001.pdf",
+    },
+    {
+        id: "2",
+        serviceId: "3",
+        title: "Kontrak IP Transit Jakarta DC 2",
+        startDate: "2025-03-01",
+        endDate: "2027-02-28",
+        documentUrl: "/documents/contract-003.pdf",
+    },
+    {
+        id: "3",
+        serviceId: "4",
+        title: "Kontrak Collocation Rack Surabaya",
+        startDate: "2024-12-01",
+        endDate: "2026-11-30",
+        documentUrl: "/documents/contract-004.pdf",
+    },
+    {
+        id: "4",
+        serviceId: "6",
+        title: "Kontrak Internet Exchange Jakarta DC 3",
+        startDate: "2025-01-20",
+        endDate: "2026-01-19",
+        documentUrl: "/documents/contract-006.pdf",
+    },
+    {
+        id: "5",
+        serviceId: "7",
+        title: "Kontrak Manage Service Surabaya DC 2",
+        startDate: "2024-11-15",
+        endDate: "2026-11-14",
+        documentUrl: "/documents/contract-007.pdf",
     },
 ]
 

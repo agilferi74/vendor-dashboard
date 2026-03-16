@@ -12,3 +12,16 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Contract {
+  id          String   @id @default(uuid())
+  serviceId   String
+  title       String
+  startDate   DateTime
+  endDate     DateTime
+  documentUrl String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contracts")
+}

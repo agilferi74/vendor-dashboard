@@ -34,3 +34,12 @@ export interface Payment {
     amount: number
     dueDate: string
 }
+
+export interface Contract {
+    id: string
+    serviceId: string
+    title: string
+    startDate: string
+    endDate: string
+    documentUrl: string
+}
