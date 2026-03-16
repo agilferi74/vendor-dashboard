@@ -7,15 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Combobox } from "@/components/ui/combobox"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Upload } from "lucide-react"
-import { PaymentType } from "@/types"
 
 function InvoiceFormContent() {
     const router = useRouter()
@@ -23,9 +15,11 @@ function InvoiceFormContent() {
     const invoiceId = searchParams.get("id")
     const isEditMode = !!invoiceId
 
+    const editingInvoice = isEditMode ? invoices.find((i) => i.id === invoiceId) : null
+    const isOtpInvoice = editingInvoice?.paymentType === "OTP"
+
     const [form, setForm] = useState({
         serviceId: "",
-        paymentType: "MTC" as PaymentType,
         invoiceNumber: "",
         period: "",
         invoiceAmount: "",
@@ -41,32 +35,41 @@ function InvoiceFormContent() {
     const [proofFileName, setProofFileName] = useState("")
 
     useEffect(() => {
-        if (isEditMode) {
-            const invoice = invoices.find((i) => i.id === invoiceId)
-            if (invoice) {
-                setForm({
-                    serviceId: invoice.serviceId,
-                    paymentType: invoice.paymentType,
-                    invoiceNumber: invoice.invoiceNumber,
-                    period: invoice.period,
-                    invoiceAmount: invoice.invoiceAmount.toString(),
-                    paidAmount: invoice.paidAmount.toString(),
-                    invoiceDate: invoice.invoiceDate,
-                    dueDate: invoice.dueDate,
-                    paymentDate: invoice.paymentDate,
-                    invoiceDocumentUrl: invoice.invoiceDocumentUrl,
-                    paymentProofUrl: invoice.paymentProofUrl,
-                })
-                setInvoiceFileName(invoice.invoiceDocumentUrl.split("/").pop() || "")
-                if (invoice.paymentProofUrl) {
-                    setProofFileName(invoice.paymentProofUrl.split("/").pop() || "")
-                }
+        if (isEditMode && editingInvoice) {
+            setForm({
+                serviceId: editingInvoice.serviceId,
+                invoiceNumber: editingInvoice.invoiceNumber,
+                period: editingInvoice.period,
+                invoiceAmount: editingInvoice.invoiceAmount.toString(),
+                paidAmount: editingInvoice.paidAmount.toString(),
+                invoiceDate: editingInvoice.invoiceDate,
+                dueDate: editingInvoice.dueDate,
+                paymentDate: editingInvoice.paymentDate,
+                invoiceDocumentUrl: editingInvoice.invoiceDocumentUrl,
+                paymentProofUrl: editingInvoice.paymentProofUrl,
+            })
+            if (editingInvoice.invoiceDocumentUrl) {
+                setInvoiceFileName(editingInvoice.invoiceDocumentUrl.split("/").pop() || "")
+            }
+            if (editingInvoice.paymentProofUrl) {
+                setProofFileName(editingInvoice.paymentProofUrl.split("/").pop() || "")
             }
         }
-    }, [isEditMode, invoiceId])
+    }, [isEditMode, editingInvoice])
 
-    const handleChange = (field: string, value: any) => {
+    const handleChange = (field: string, value: string) => {
         setForm({ ...form, [field]: value })
+    }
+
+    const handleServiceChange = (serviceId: string) => {
+        setForm((prev) => {
+            const service = services.find((s) => s.id === serviceId)
+            return {
+                ...prev,
+                serviceId,
+                invoiceAmount: !isEditMode && service ? service.mtcCost.toString() : prev.invoiceAmount,
+            }
+        })
     }
 
     const handleFileChange = (field: string, setFileName: (n: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,23 +83,19 @@ function InvoiceFormContent() {
     const handleSubmit = () => {
         const payload = {
             ...form,
+            paymentType: isOtpInvoice ? "OTP" as const : "MTC" as const,
             invoiceAmount: Number(form.invoiceAmount),
             paidAmount: Number(form.paidAmount),
         }
         if (isEditMode) {
-            console.log("Update Invoice:", { id: invoiceId, ...payload })
+            console.log(isOtpInvoice ? "Update OTP Invoice:" : "Update MTC Invoice:", { id: invoiceId, ...payload })
         } else {
-            console.log("New Invoice:", payload)
+            console.log("New MTC Invoice:", payload)
         }
         router.push("/invoices")
     }
 
-    const handleDelete = () => {
-        if (confirm("Apakah Anda yakin ingin menghapus invoice ini?")) {
-            console.log("Delete Invoice:", invoiceId)
-            router.push("/invoices")
-        }
-    }
+    const selectedService = services.find((s) => s.id === form.serviceId)
 
     return (
         <div className="flex min-h-screen bg-gray-50">
@@ -105,16 +104,20 @@ function InvoiceFormContent() {
                 <div className="max-w-4xl mx-auto">
                     <div className="mb-6 sm:mb-8">
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                            {isEditMode ? "Edit Invoice" : "Create New Invoice"}
+                            {isOtpInvoice ? "Edit Invoice OTP" : isEditMode ? "Edit Invoice MTC" : "Create New MTC Invoice"}
                         </h1>
                         <p className="text-gray-600 mt-2 text-sm sm:text-base">
-                            {isEditMode ? "Update invoice details" : "Fill in the details to add a new invoice"}
+                            {isOtpInvoice
+                                ? "Lengkapi detail invoice OTP setelah menerima invoice dari vendor"
+                                : isEditMode
+                                    ? "Update nomor invoice, status pembayaran, dan dokumen"
+                                    : "Fill in the details to add a new monthly invoice"}
                         </p>
                     </div>
 
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8">
                         <div className="space-y-6 sm:space-y-8">
-                            {/* Service & Payment Type */}
+                            {/* Service & Invoice Info */}
                             <div>
                                 <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">
                                     Informasi Invoice
@@ -122,31 +125,29 @@ function InvoiceFormContent() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">ID Layanan</label>
-                                        <Combobox
-                                            options={services.map((s) => ({ value: s.id, label: `${s.providerServiceId} - ${s.serviceType}` }))}
-                                            value={form.serviceId}
-                                            onChange={(val) => handleChange("serviceId", val)}
-                                            placeholder="Pilih Layanan"
-                                        />
+                                        {isEditMode ? (
+                                            <Input value={selectedService ? `${selectedService.providerServiceId} - ${selectedService.serviceType}` : ""} disabled />
+                                        ) : (
+                                            <Combobox
+                                                options={services.map((s) => ({ value: s.id, label: `${s.providerServiceId} - ${s.serviceType}` }))}
+                                                value={form.serviceId}
+                                                onChange={handleServiceChange}
+                                                placeholder="Pilih Layanan"
+                                            />
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Pembayaran</label>
-                                        <Select value={form.paymentType} onValueChange={(val) => handleChange("paymentType", val)}>
-                                            <SelectTrigger><SelectValue placeholder="Pilih Jenis" /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="OTP">OTP (One Time Payment)</SelectItem>
-                                                <SelectItem value="MTC">MTC (Monthly Cost)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <Input value={isOtpInvoice ? "OTP (One Time Payment)" : "MTC (Monthly Cost)"} disabled />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">No. Invoice</label>
-                                        <Input value={form.invoiceNumber} onChange={(e) => handleChange("invoiceNumber", e.target.value)} placeholder="Contoh: INV-2025-001" />
+                                        <Input value={form.invoiceNumber} onChange={(e) => handleChange("invoiceNumber", e.target.value)} placeholder="Masukkan nomor invoice dari vendor" />
                                     </div>
-                                    {form.paymentType === "MTC" && (
+                                    {!isOtpInvoice && (
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Periode</label>
-                                            <Input type="month" value={form.period} onChange={(e) => handleChange("period", e.target.value)} className="cursor-pointer" />
+                                            <Input type="month" value={form.period} onChange={(e) => handleChange("period", e.target.value)} className="cursor-pointer" disabled={isEditMode} />
                                         </div>
                                     )}
                                 </div>
@@ -160,7 +161,7 @@ function InvoiceFormContent() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Nilai Invoice</label>
-                                        <Input type="number" value={form.invoiceAmount} onChange={(e) => handleChange("invoiceAmount", e.target.value)} placeholder="Masukkan nilai invoice" />
+                                        <Input type="number" value={form.invoiceAmount} onChange={(e) => handleChange("invoiceAmount", e.target.value)} placeholder="Masukkan nilai invoice" disabled={isEditMode} />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Nilai Terbayar</label>
@@ -230,13 +231,8 @@ function InvoiceFormContent() {
                             {/* Actions */}
                             <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
                                 <Button onClick={handleSubmit} className="w-full sm:w-auto px-8">
-                                    {isEditMode ? "Update Invoice" : "Save Invoice"}
+                                    {isOtpInvoice ? "Update Invoice OTP" : isEditMode ? "Update Invoice" : "Save Invoice"}
                                 </Button>
-                                {isEditMode && (
-                                    <Button variant="destructive" onClick={handleDelete} className="w-full sm:w-auto px-8">
-                                        Delete Invoice
-                                    </Button>
-                                )}
                                 <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto px-8">
                                     Cancel
                                 </Button>

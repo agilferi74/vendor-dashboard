@@ -86,7 +86,7 @@ export default function InvoicesPage() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h1 className="text-xl sm:text-2xl font-bold">Invoice Management</h1>
                     <Button onClick={() => router.push("/invoices/form")} className="w-full sm:w-auto">
-                        + Add Invoice
+                        + Add MTC Invoice
                     </Button>
                 </div>
 

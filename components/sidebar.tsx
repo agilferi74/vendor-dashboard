@@ -2,10 +2,21 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import { Menu, X } from "lucide-react"
+
+const navItems = [
+    { href: "/", label: "Dashboard" },
+    { href: "/vendors", label: "Vendors" },
+    { href: "/services", label: "Services" },
+    { href: "/activities", label: "Activities" },
+    { href: "/contracts", label: "Contracts" },
+    { href: "/invoices", label: "Invoices" },
+]
 
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(false)
+    const pathname = usePathname()
 
     return (
         <>
@@ -36,32 +47,27 @@ export default function Sidebar() {
                 `}
             >
                 <h2 className="text-xl font-bold mb-6 mt-12 lg:mt-0">Vendor Dashboard</h2>
-                <ul className="space-y-4">
-                    <li>
-                        <Link href="/" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
-                            Dashboard
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/vendors" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
-                            Vendors
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/services" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
-                            Services
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/contracts" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
-                            Contracts
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/invoices" onClick={() => setIsOpen(false)} className="block hover:text-gray-300 transition-colors">
-                            Invoices
-                        </Link>
-                    </li>
+                <ul className="space-y-1">
+                    {navItems.map((item) => {
+                        const isActive = item.href === "/"
+                            ? pathname === "/"
+                            : pathname.startsWith(item.href)
+                        return (
+                            <li key={item.href}>
+                                <Link
+                                    href={item.href}
+                                    onClick={() => setIsOpen(false)}
+                                    className={`block px-3 py-2 rounded-md transition-colors ${
+                                        isActive
+                                            ? "bg-white/10 text-white font-medium"
+                                            : "text-gray-400 hover:text-white hover:bg-white/5"
+                                    }`}
+                                >
+                                    {item.label}
+                                </Link>
+                            </li>
+                        )
+                    })}
                 </ul>
             </aside>
         </>

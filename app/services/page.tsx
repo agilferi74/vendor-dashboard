@@ -2,18 +2,9 @@
 
 import { useMemo, useState } from "react"
 import Sidebar from "@/components/sidebar"
-import { services, vendors } from "@/data/dummy"
-import { Service } from "@/types"
+import { services, vendors, contracts } from "@/data/dummy"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import {
     Select,
@@ -26,52 +17,59 @@ import { useRouter } from "next/navigation"
 
 const ITEMS_PER_PAGE = 5
 
+// Helper: check if service is active based on contract dates
+const isServiceActive = (serviceId: string): boolean => {
+    const contract = contracts.find((c) => c.serviceId === serviceId)
+    if (!contract) return false
+    const now = new Date()
+    return new Date(contract.startDate) <= now && now <= new Date(contract.endDate)
+}
+
+// Helper: get contract for a service
+const getContract = (serviceId: string) => contracts.find((c) => c.serviceId === serviceId)
+
 export default function ServicesPage() {
     const router = useRouter()
     const [search, setSearch] = useState("")
-    const [statusFilter, setStatusFilter] = useState<
-        "ALL" | "ACTIVE" | "INACTIVE"
-    >("ALL")
+    const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL")
     const [currentPage, setCurrentPage] = useState(1)
 
     const filteredServices = useMemo(() => {
         return services.filter((service) => {
             const matchSearch =
-                service.serviceType
-                    .toLowerCase()
-                    .includes(search.toLowerCase()) ||
-                service.providerServiceId
-                    .toLowerCase()
-                    .includes(search.toLowerCase()) ||
-                service.location
-                    .toLowerCase()
-                    .includes(search.toLowerCase())
+                service.serviceType.toLowerCase().includes(search.toLowerCase()) ||
+                service.providerServiceId.toLowerCase().includes(search.toLowerCase()) ||
+                service.location.toLowerCase().includes(search.toLowerCase())
 
+            const active = isServiceActive(service.id)
             const matchStatus =
                 statusFilter === "ALL" ||
-                (statusFilter === "ACTIVE" && service.active) ||
-                (statusFilter === "INACTIVE" && !service.active)
+                (statusFilter === "ACTIVE" && active) ||
+                (statusFilter === "INACTIVE" && !active)
 
             return matchSearch && matchStatus
         })
     }, [search, statusFilter])
 
-    const totalPages = Math.ceil(filteredServices.length / ITEMS_PER_PAGE)
-
+    const totalPages = Math.max(1, Math.ceil(filteredServices.length / ITEMS_PER_PAGE))
     const paginatedServices = filteredServices.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     )
 
-    const getVendorName = (vendorId: string) => {
-        return vendors.find((v) => v.id === vendorId)?.name || "-"
-    }
+    const getVendorName = (vendorId: string) =>
+        vendors.find((v) => v.id === vendorId)?.name || "-"
 
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-        }).format(value)
+    const formatCurrency = (value: number) =>
+        new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value)
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return "-"
+        return new Date(dateString).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        })
     }
 
     return (
@@ -87,25 +85,13 @@ export default function ServicesPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                    {/* Search */}
                     <Input
                         placeholder="Search service..."
                         value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value)
-                            setCurrentPage(1)
-                        }}
+                        onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }}
                         className="w-full sm:max-w-sm"
                     />
-
-                    {/* Status Dropdown */}
-                    <Select
-                        value={statusFilter}
-                        onValueChange={(value) => {
-                            setStatusFilter(value as any)
-                            setCurrentPage(1)
-                        }}
-                    >
+                    <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value as "ALL" | "ACTIVE" | "INACTIVE"); setCurrentPage(1) }}>
                         <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Filter Status" />
                         </SelectTrigger>
@@ -119,116 +105,83 @@ export default function ServicesPage() {
 
                 {/* Services Grid */}
                 <div className="grid grid-cols-1 gap-4 mb-6">
-                    {paginatedServices.map((service) => (
-                        <div
-                            key={service.id}
-                            className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow"
-                        >
-                            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                                {/* Left Section - Main Info */}
-                                <div className="flex-1 space-y-3">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-lg font-semibold text-gray-900">
-                                                    {service.serviceType}
-                                                </h3>
-                                                <Badge variant={service.active ? "default" : "destructive"}>
-                                                    {service.active ? "ACTIVE" : "INACTIVE"}
-                                                </Badge>
+                    {paginatedServices.map((service) => {
+                        const active = isServiceActive(service.id)
+                        const contract = getContract(service.id)
+                        return (
+                            <div key={service.id} className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                                    {/* Left Section */}
+                                    <div className="flex-1 space-y-3">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h3 className="text-lg font-semibold text-gray-900">{service.serviceType}</h3>
+                                                    <Badge variant={active ? "default" : "destructive"}>
+                                                        {active ? "ACTIVE" : "INACTIVE"}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-sm text-gray-600">
+                                                    {getVendorName(service.vendorId)} • {service.providerServiceId}
+                                                </p>
                                             </div>
-                                            <p className="text-sm text-gray-600">
-                                                {getVendorName(service.vendorId)} • {service.providerServiceId}
-                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Location</p>
+                                                <p className="text-sm font-medium text-gray-900">{service.location}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Capacity</p>
+                                                <p className="text-sm font-medium text-gray-900">{service.capacity}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">PIC Internal</p>
+                                                <p className="text-sm font-medium text-gray-900">{service.internalPic}</p>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">Location</p>
-                                            <p className="text-sm font-medium text-gray-900">{service.location}</p>
+                                    {/* Right Section */}
+                                    <div className="lg:w-80 space-y-3 lg:border-l lg:pl-6">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">OTP Cost</p>
+                                                <p className="text-sm font-semibold text-gray-900">{formatCurrency(service.otpCost)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Monthly Cost</p>
+                                                <p className="text-sm font-semibold text-gray-900">{formatCurrency(service.mtcCost)}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">Capacity</p>
-                                            <p className="text-sm font-medium text-gray-900">{service.capacity}</p>
+                                        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Contract Start</p>
+                                                <p className="text-sm font-medium text-gray-900">{formatDate(contract?.startDate || "")}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Contract End</p>
+                                                <p className="text-sm font-medium text-gray-900">{formatDate(contract?.endDate || "")}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">PIC Internal</p>
-                                            <p className="text-sm font-medium text-gray-900">{service.internalPic}</p>
+                                        <div className="pt-2">
+                                            <Button size="sm" variant="outline" className="w-full" onClick={() => router.push(`/services/${service.id}`)}>
+                                                View Detail
+                                            </Button>
                                         </div>
-                                    </div>
-                                </div>
-
-                                {/* Right Section - Cost & Dates */}
-                                <div className="lg:w-80 space-y-3 lg:border-l lg:pl-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">OTP Cost</p>
-                                            <p className="text-sm font-semibold text-gray-900">
-                                                {formatCurrency(service.otpCost)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">Monthly Cost</p>
-                                            <p className="text-sm font-semibold text-gray-900">
-                                                {formatCurrency(service.mtcCost)}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">Start Date</p>
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {service.startDate || "-"}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-1">End Date</p>
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {service.endDate || "-"}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="w-full"
-                                            onClick={() => router.push(`/services/form?id=${service.id}`)}
-                                        >
-                                            Edit Service
-                                        </Button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
 
                 {/* Pagination */}
                 <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-6">
-                    <span className="text-sm order-2 sm:order-1">
-                        Page {currentPage} of {totalPages}
-                    </span>
+                    <span className="text-sm order-2 sm:order-1">Page {currentPage} of {totalPages}</span>
                     <div className="flex gap-2 order-1 sm:order-2">
-                        <Button
-                            variant="outline"
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage((prev) => prev - 1)}
-                            className="w-20"
-                        >
-                            Prev
-                        </Button>
-                        <Button
-                            variant="outline"
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage((prev) => prev + 1)}
-                            className="w-20"
-                        >
-                            Next
-                        </Button>
+                        <Button variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((prev) => prev - 1)} className="w-20">Prev</Button>
+                        <Button variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((prev) => prev + 1)} className="w-20">Next</Button>
                     </div>
                 </div>
             </div>

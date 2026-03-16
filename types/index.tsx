@@ -22,17 +22,7 @@ export interface Service {
     otpCost: number
     mtcCost: number
     unit: string
-    active: boolean
     internalPic: string
-    startDate: string
-    endDate: string
-}
-
-export interface Payment {
-    id: string
-    vendorId: string
-    amount: number
-    dueDate: string
 }
 
 export interface Contract {
@@ -45,6 +35,19 @@ export interface Contract {
 }
 
 export type PaymentType = "OTP" | "MTC"
+
+export type ActivityType = "Aktivasi" | "Upgrade" | "Downgrade" | "Terminate"
+
+export interface ServiceActivity {
+    id: string
+    serviceId: string
+    activityType: ActivityType
+    startDate: string
+    internalPic: string
+    capacity: string
+    mtcCost: number
+    documentUrl: string
+}
 
 export interface Invoice {
     id: string
