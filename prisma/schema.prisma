@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
@@ -13,6 +10,57 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PaymentType {
+  OTP
+  MTC
+}
+
+enum ActivityType {
+  Aktivasi
+  Upgrade
+  Downgrade
+  Terminate
+}
+
+model Vendor {
+  id                 String    @id @default(uuid())
+  name               String
+  address            String
+  picCommercialName  String
+  picCommercialPhone String
+  picTechnicalName   String
+  picTechnicalPhone  String
+  npwp               String
+  isDeleted          Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  services           Service[]
+
+  @@map("vendors")
+}
+
+model Service {
+  id                String            @id @default(uuid())
+  vendorId          String
+  providerServiceId String
+  serviceType       String
+  location          String
+  capacity          String
+  otpCost           Float
+  mtcCost           Float
+  unit              String
+  internalPic       String
+  isDeleted         Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  vendor            Vendor            @relation(fields: [vendorId], references: [id])
+  contracts         Contract[]
+  activities        ServiceActivity[]
+  invoices          Invoice[]
+
+  @@map("services")
+}
+
 model Contract {
   id          String   @id @default(uuid())
   serviceId   String
@@ -20,8 +68,48 @@ model Contract {
   startDate   DateTime
   endDate     DateTime
   documentUrl String
+  isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  service     Service  @relation(fields: [serviceId], references: [id])
 
   @@map("contracts")
+}
+
+model ServiceActivity {
+  id           String       @id @default(uuid())
+  serviceId    String
+  activityType ActivityType
+  startDate    DateTime
+  internalPic  String
+  capacity     String
+  mtcCost      Float
+  documentUrl  String
+  isDeleted    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  service      Service      @relation(fields: [serviceId], references: [id])
+
+  @@map("service_activities")
+}
+
+model Invoice {
+  id                 String      @id @default(uuid())
+  serviceId          String
+  paymentType        PaymentType
+  invoiceNumber      String
+  period             String
+  invoiceAmount      Float
+  paidAmount         Float
+  invoiceDate        DateTime?
+  dueDate            DateTime?
+  paymentDate        DateTime?
+  invoiceDocumentUrl String
+  paymentProofUrl    String
+  isDeleted          Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  service            Service     @relation(fields: [serviceId], references: [id])
+
+  @@map("invoices")
 }
