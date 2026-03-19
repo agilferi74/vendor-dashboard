@@ -21,7 +21,7 @@ interface Vendor {
 
 const ITEMS_PER_PAGE = 5
 
-export function VendorTable({ vendors }: { vendors: Vendor[] }) {
+export function VendorTable({ vendors, canWrite }: { vendors: Vendor[]; canWrite: boolean }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -47,9 +47,11 @@ export function VendorTable({ vendors }: { vendors: Vendor[] }) {
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Vendor Management</h1>
-        <Button onClick={() => router.push("/vendors/form")} className="w-full sm:w-auto">
-          + Add Vendor
-        </Button>
+        {canWrite && (
+          <Button onClick={() => router.push("/vendors/form")} className="w-full sm:w-auto">
+            + Add Vendor
+          </Button>
+        )}
       </div>
 
       <div className="mb-6">
@@ -92,9 +94,11 @@ export function VendorTable({ vendors }: { vendors: Vendor[] }) {
                 </TableCell>
                 <TableCell className="whitespace-nowrap">{vendor.npwp}</TableCell>
                 <TableCell className="whitespace-nowrap">
-                  <Button size="sm" variant="outline" onClick={() => router.push(`/vendors/form?id=${vendor.id}`)}>
-                    Edit
-                  </Button>
+                  {canWrite && (
+                    <Button size="sm" variant="outline" onClick={() => router.push(`/vendors/form?id=${vendor.id}`)}>
+                      Edit
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

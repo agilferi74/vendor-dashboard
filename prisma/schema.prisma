@@ -22,6 +22,25 @@ enum ActivityType {
   Terminate
 }
 
+enum Role {
+  HR
+  Finance
+  Operasional
+}
+
+model User {
+  id             String   @id @default(uuid())
+  supabaseUserId String   @unique
+  name           String
+  email          String   @unique
+  role           Role
+  isDeleted      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("users")
+}
+
 model Vendor {
   id                 String    @id @default(uuid())
   name               String
@@ -62,16 +81,17 @@ model Service {
 }
 
 model Contract {
-  id          String   @id @default(uuid())
-  serviceId   String
-  title       String
-  startDate   DateTime
-  endDate     DateTime
-  documentUrl String
-  isDeleted   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  service     Service  @relation(fields: [serviceId], references: [id])
+  id            String   @id @default(uuid())
+  serviceId     String
+  title         String
+  startDate     DateTime
+  endDate       DateTime
+  documentUrl   String
+  isTerminated  Boolean  @default(false)
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  service       Service  @relation(fields: [serviceId], references: [id])
 
   @@map("contracts")
 }
@@ -85,6 +105,7 @@ model ServiceActivity {
   capacity     String
   mtcCost      Float
   documentUrl  String
+  reason       String       @default("")
   isDeleted    Boolean      @default(false)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -106,6 +127,7 @@ model Invoice {
   paymentDate        DateTime?
   invoiceDocumentUrl String
   paymentProofUrl    String
+  isCancelled        Boolean     @default(false)
   isDeleted          Boolean     @default(false)
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
