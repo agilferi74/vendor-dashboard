@@ -10,6 +10,8 @@ import { Combobox } from "@/components/ui/combobox"
 import { Upload } from "lucide-react"
 import { getServiceById, getVendorsForSelect, createService, updateService } from "../actions"
 import { uploadFile } from "@/lib/supabase"
+import { serviceSchema, serviceEditSchema } from "@/lib/validations"
+import type { ZodError } from "zod"
 
 function ServiceFormContent() {
   const router = useRouter()
@@ -21,6 +23,7 @@ function ServiceFormContent() {
   const [loading, setLoading] = useState(false)
   const [fileName, setFileName] = useState("")
   const [file, setFile] = useState<File | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [form, setForm] = useState({
     vendorId: "", providerServiceId: "", serviceType: "", location: "",
@@ -60,7 +63,14 @@ function ServiceFormContent() {
     }
   }, [isEditMode, serviceId])
 
-  const handleChange = (field: string, value: string) => setForm({ ...form, [field]: value })
+  const handleChange = (field: string, value: string) => {
+    setForm({ ...form, [field]: value })
+    if (errors[field]) setErrors({ ...errors, [field]: "" })
+  }
+
+  const onlyDigits = (field: string, value: string) => {
+    handleChange(field, value.replace(/[^0-9.]/g, ""))
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -68,6 +78,25 @@ function ServiceFormContent() {
   }
 
   const handleSubmit = async () => {
+    try {
+      if (isEditMode) {
+        serviceEditSchema.parse({
+          providerServiceId: form.providerServiceId,
+          location: form.location,
+          internalPic: form.internalPic,
+        })
+      } else {
+        serviceSchema.parse(form)
+      }
+      setErrors({})
+    } catch (err) {
+      const zodErr = err as ZodError
+      const fieldErrors: Record<string, string> = {}
+      zodErr.issues.forEach((e) => { fieldErrors[e.path[0] as string] = e.message })
+      setErrors(fieldErrors)
+      return
+    }
+
     setLoading(true)
     try {
       if (isEditMode && serviceId) {
@@ -102,6 +131,9 @@ function ServiceFormContent() {
     }
   }
 
+  const fe = (field: string) =>
+    errors[field] ? <p className="text-xs text-red-500 mt-1">{errors[field]}</p> : null
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -128,6 +160,7 @@ function ServiceFormContent() {
                     ) : (
                       <Combobox options={vendors.map((v) => ({ value: v.id, label: v.name }))} value={form.vendorId} onChange={(val) => handleChange("vendorId", val)} placeholder="Pilih Vendor" />
                     )}
+                    {fe("vendorId")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Layanan</label>
@@ -136,14 +169,17 @@ function ServiceFormContent() {
                     ) : (
                       <Combobox options={SERVICE_TYPES.map((t) => ({ value: t, label: t }))} value={form.serviceType} onChange={(val) => handleChange("serviceType", val)} placeholder="Pilih Jenis Layanan" />
                     )}
+                    {fe("serviceType")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">ID Layanan Penyedia</label>
                     <Input value={form.providerServiceId} onChange={(e) => handleChange("providerServiceId", e.target.value)} placeholder="Masukkan ID layanan" />
+                    {fe("providerServiceId")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">PIC Internal</label>
                     <Input value={form.internalPic} onChange={(e) => handleChange("internalPic", e.target.value)} placeholder="Nama PIC Internal" />
+                    {fe("internalPic")}
                   </div>
                 </div>
               </div>
@@ -154,14 +190,17 @@ function ServiceFormContent() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Lokasi Layanan</label>
                     <Input value={form.location} onChange={(e) => handleChange("location", e.target.value)} placeholder="Contoh: Jakarta DC 1" />
+                    {fe("location")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Kapasitas Layanan</label>
                     <Input value={form.capacity} onChange={(e) => handleChange("capacity", e.target.value)} placeholder="Contoh: 100" disabled={isEditMode} />
+                    {fe("capacity")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Satuan Layanan</label>
                     <Input value={form.unit} onChange={(e) => handleChange("unit", e.target.value)} placeholder="Contoh: Mbps / TB / Rack" disabled={isEditMode} />
+                    {fe("unit")}
                   </div>
                 </div>
               </div>
@@ -171,11 +210,13 @@ function ServiceFormContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Biaya OTP (One Time Payment)</label>
-                    <Input type="number" value={form.otpCost} onChange={(e) => handleChange("otpCost", e.target.value)} placeholder="Masukkan biaya OTP" disabled={isEditMode} />
+                    <Input value={form.otpCost} onChange={(e) => onlyDigits("otpCost", e.target.value)} placeholder="Masukkan biaya OTP" disabled={isEditMode} />
+                    {fe("otpCost")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Biaya MTC (Monthly Cost)</label>
-                    <Input type="number" value={form.mtcCost} onChange={(e) => handleChange("mtcCost", e.target.value)} placeholder="Masukkan biaya bulanan" disabled={isEditMode} />
+                    <Input value={form.mtcCost} onChange={(e) => onlyDigits("mtcCost", e.target.value)} placeholder="Masukkan biaya bulanan" disabled={isEditMode} />
+                    {fe("mtcCost")}
                   </div>
                 </div>
               </div>
@@ -187,6 +228,7 @@ function ServiceFormContent() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Judul Kontrak</label>
                       <Input value={form.contractTitle} onChange={(e) => handleChange("contractTitle", e.target.value)} placeholder="Masukkan judul kontrak" />
+                      {fe("contractTitle")}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <div>
@@ -194,12 +236,14 @@ function ServiceFormContent() {
                         <div className="cursor-pointer" onClick={(e) => { const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement; input?.showPicker() }}>
                           <Input type="date" value={form.contractStartDate} onChange={(e) => handleChange("contractStartDate", e.target.value)} className="cursor-pointer" />
                         </div>
+                        {fe("contractStartDate")}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Berakhir Kontrak</label>
                         <div className="cursor-pointer" onClick={(e) => { const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement; input?.showPicker() }}>
                           <Input type="date" value={form.contractEndDate} onChange={(e) => handleChange("contractEndDate", e.target.value)} className="cursor-pointer" />
                         </div>
+                        {fe("contractEndDate")}
                       </div>
                     </div>
                     <div>

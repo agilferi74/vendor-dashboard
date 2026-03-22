@@ -1,10 +1,12 @@
 import { getServices } from "./actions"
 import { requireAuth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import Sidebar from "@/components/sidebar"
 import { ServiceList } from "./service-list"
 
 export default async function ServicesPage() {
   const user = await requireAuth()
+  if (user.role === "Finance") redirect("/")
   const services = await getServices()
 
   const serialized = services.map((s) => ({

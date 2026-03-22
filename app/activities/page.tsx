@@ -1,10 +1,12 @@
 import { getActivities } from "./actions"
 import { requireAuth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import Sidebar from "@/components/sidebar"
 import { ActivityTable } from "./activity-table"
 
 export default async function ActivitiesPage() {
   const user = await requireAuth()
+  if (user.role === "Finance") redirect("/")
   const activities = await getActivities()
 
   const serialized = activities.map((act) => ({

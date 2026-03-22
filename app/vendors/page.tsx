@@ -1,10 +1,12 @@
 import { getVendors } from "./actions"
 import { requireAuth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import Sidebar from "@/components/sidebar"
 import { VendorTable } from "./vendor-table"
 
 export default async function VendorsPage() {
   const user = await requireAuth()
+  if (user.role === "Finance") redirect("/")
   const vendors = await getVendors()
 
   return (

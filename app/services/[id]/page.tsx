@@ -1,11 +1,13 @@
 import Sidebar from "@/components/sidebar"
 import { getServiceById } from "../actions"
 import { requireAuth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { ServiceDetail } from "./service-detail"
 import { notFound } from "next/navigation"
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireAuth()
+  if (user.role === "Finance") redirect("/")
   const { id } = await params
   const service = await getServiceById(id)
 
@@ -67,7 +69,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar role={user.role} />
       <div className="flex-1 p-4 sm:p-6 lg:p-10 w-full overflow-hidden pt-16 lg:pt-4 sm:pt-6">
-        <ServiceDetail service={serialized} canWrite={user.role === "HR"} canEditInvoice={user.role === "HR" || user.role === "Finance"} />
+        <ServiceDetail service={serialized} canWrite={user.role === "HR"} canEditInvoice={false} />
       </div>
     </div>
   )

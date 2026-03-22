@@ -5,23 +5,26 @@ import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, X, LogOut } from "lucide-react"
 import { createSupabaseBrowser } from "@/lib/supabase-browser"
+import { useAuth } from "@/lib/auth-context"
 
 const allNavItems = [
   { href: "/", label: "Dashboard", roles: ["HR", "Finance", "Operasional"] },
-  { href: "/vendors", label: "Vendors", roles: ["HR", "Finance", "Operasional"] },
-  { href: "/services", label: "Services", roles: ["HR", "Finance", "Operasional"] },
-  { href: "/activities", label: "Activities", roles: ["HR", "Finance", "Operasional"] },
-  { href: "/contracts", label: "Contracts", roles: ["HR", "Finance", "Operasional"] },
-  { href: "/invoices", label: "Invoices", roles: ["HR", "Finance", "Operasional"] },
+  { href: "/vendors", label: "Vendors", roles: ["HR", "Operasional"] },
+  { href: "/services", label: "Services", roles: ["HR", "Operasional"] },
+  { href: "/activities", label: "Activities", roles: ["HR", "Operasional"] },
+  { href: "/contracts", label: "Contracts", roles: ["HR", "Operasional"] },
+  { href: "/invoices", label: "Invoices", roles: ["HR", "Finance"] },
   { href: "/users", label: "Users", roles: ["HR"] },
 ]
 
-export default function Sidebar({ role = "HR" }: { role?: string }) {
+export default function Sidebar({ role }: { role?: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+  const authUser = useAuth()
+  const currentRole = role || authUser?.role || "Operasional"
 
-  const navItems = allNavItems.filter((item) => item.roles.includes(role))
+  const navItems = allNavItems.filter((item) => item.roles.includes(currentRole))
 
   const handleLogout = async () => {
     const supabase = createSupabaseBrowser()

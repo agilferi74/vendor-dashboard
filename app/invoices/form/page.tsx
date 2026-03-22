@@ -9,6 +9,8 @@ import { Combobox } from "@/components/ui/combobox"
 import { Upload } from "lucide-react"
 import { getInvoiceById, getServicesForInvoice, createMtcInvoice, updateInvoice, getLatestMtcCost } from "../actions"
 import { uploadFile } from "@/lib/supabase"
+import { invoiceCreateSchema, invoiceEditSchema } from "@/lib/validations"
+import type { ZodError } from "zod"
 
 function InvoiceFormContent() {
   const router = useRouter()
@@ -23,6 +25,7 @@ function InvoiceFormContent() {
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [invoiceFileName, setInvoiceFileName] = useState("")
   const [proofFileName, setProofFileName] = useState("")
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [form, setForm] = useState({
     serviceId: "", invoiceNumber: "", period: "",
@@ -57,7 +60,14 @@ function InvoiceFormContent() {
     }
   }, [isEditMode, invoiceId])
 
-  const handleChange = (field: string, value: string) => setForm({ ...form, [field]: value })
+  const handleChange = (field: string, value: string) => {
+    setForm({ ...form, [field]: value })
+    if (errors[field]) setErrors({ ...errors, [field]: "" })
+  }
+
+  const onlyDigits = (field: string, value: string) => {
+    handleChange(field, value.replace(/[^0-9.]/g, ""))
+  }
 
   const handleServiceChange = async (serviceId: string) => {
     setForm((prev) => ({ ...prev, serviceId }))
@@ -68,6 +78,27 @@ function InvoiceFormContent() {
   }
 
   const handleSubmit = async () => {
+    try {
+      if (isEditMode) {
+        invoiceEditSchema.parse({
+          invoiceNumber: form.invoiceNumber,
+          paidAmount: form.paidAmount,
+          invoiceDate: form.invoiceDate,
+          dueDate: form.dueDate,
+          paymentDate: form.paymentDate,
+        })
+      } else {
+        invoiceCreateSchema.parse(form)
+      }
+      setErrors({})
+    } catch (err) {
+      const zodErr = err as ZodError
+      const fieldErrors: Record<string, string> = {}
+      zodErr.issues.forEach((e) => { fieldErrors[e.path[0] as string] = e.message })
+      setErrors(fieldErrors)
+      return
+    }
+
     setLoading(true)
     try {
       let invoiceDocUrl = form.invoiceDocumentUrl
@@ -106,6 +137,9 @@ function InvoiceFormContent() {
 
   const selectedService = services.find((s) => s.id === form.serviceId)
 
+  const fe = (field: string) =>
+    errors[field] ? <p className="text-xs text-red-500 mt-1">{errors[field]}</p> : null
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -134,6 +168,7 @@ function InvoiceFormContent() {
                     ) : (
                       <Combobox options={services.map((s) => ({ value: s.id, label: `${s.providerServiceId} - ${s.serviceType}` }))} value={form.serviceId} onChange={handleServiceChange} placeholder="Pilih Layanan" />
                     )}
+                    {fe("serviceId")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Pembayaran</label>
@@ -147,6 +182,7 @@ function InvoiceFormContent() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Periode</label>
                       <Input type="month" value={form.period} onChange={(e) => handleChange("period", e.target.value)} className="cursor-pointer" disabled={isEditMode} />
+                      {fe("period")}
                     </div>
                   )}
                 </div>
@@ -157,11 +193,13 @@ function InvoiceFormContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nilai Invoice</label>
-                    <Input type="number" value={form.invoiceAmount} onChange={(e) => handleChange("invoiceAmount", e.target.value)} placeholder="Masukkan nilai invoice" disabled={isEditMode} />
+                    <Input value={form.invoiceAmount} onChange={(e) => onlyDigits("invoiceAmount", e.target.value)} placeholder="Masukkan nilai invoice" disabled={isEditMode} />
+                    {fe("invoiceAmount")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nilai Terbayar</label>
-                    <Input type="number" value={form.paidAmount} onChange={(e) => handleChange("paidAmount", e.target.value)} placeholder="Masukkan nilai terbayar" />
+                    <Input value={form.paidAmount} onChange={(e) => onlyDigits("paidAmount", e.target.value)} placeholder="Masukkan nilai terbayar" />
+                    {fe("paidAmount")}
                   </div>
                 </div>
               </div>

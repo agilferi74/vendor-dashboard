@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload } from "lucide-react"
 import { getServicesForSelect, createActivity } from "../actions"
 import { uploadFile } from "@/lib/supabase"
+import { activitySchema } from "@/lib/validations"
+import type { ZodError } from "zod"
 
 function ActivityFormContent() {
   const router = useRouter()
@@ -17,6 +19,7 @@ function ActivityFormContent() {
   const [loading, setLoading] = useState(false)
   const [fileName, setFileName] = useState("")
   const [file, setFile] = useState<File | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [form, setForm] = useState({
     serviceId: "", activityType: "", startDate: "",
@@ -27,7 +30,14 @@ function ActivityFormContent() {
 
   useEffect(() => { getServicesForSelect().then(setServices) }, [])
 
-  const handleChange = (field: string, value: string) => setForm({ ...form, [field]: value })
+  const handleChange = (field: string, value: string) => {
+    setForm({ ...form, [field]: value })
+    if (errors[field]) setErrors({ ...errors, [field]: "" })
+  }
+
+  const onlyDigits = (field: string, value: string) => {
+    handleChange(field, value.replace(/[^0-9.]/g, ""))
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -35,6 +45,17 @@ function ActivityFormContent() {
   }
 
   const handleSubmit = async () => {
+    try {
+      activitySchema.parse(form)
+      setErrors({})
+    } catch (err) {
+      const zodErr = err as ZodError
+      const fieldErrors: Record<string, string> = {}
+      zodErr.issues.forEach((e) => { fieldErrors[e.path[0] as string] = e.message })
+      setErrors(fieldErrors)
+      return
+    }
+
     setLoading(true)
     try {
       let documentUrl = ""
@@ -54,6 +75,9 @@ function ActivityFormContent() {
       setLoading(false)
     }
   }
+
+  const fe = (field: string) =>
+    errors[field] ? <p className="text-xs text-red-500 mt-1">{errors[field]}</p> : null
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -78,6 +102,7 @@ function ActivityFormContent() {
                       options={services.map((s) => ({ value: s.id, label: `${s.providerServiceId} - ${s.serviceType}` }))}
                       value={form.serviceId} onChange={(val) => handleChange("serviceId", val)} placeholder="Pilih Layanan"
                     />
+                    {fe("serviceId")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Aktivitas</label>
@@ -90,16 +115,19 @@ function ActivityFormContent() {
                         <SelectItem value="Terminate">Terminate (Pemberhentian)</SelectItem>
                       </SelectContent>
                     </Select>
+                    {fe("activityType")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai Berlaku</label>
                     <div className="cursor-pointer" onClick={(e) => { const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement; input?.showPicker() }}>
                       <Input type="date" value={form.startDate} onChange={(e) => handleChange("startDate", e.target.value)} className="cursor-pointer" />
                     </div>
+                    {fe("startDate")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">PIC Internal</label>
                     <Input value={form.internalPic} onChange={(e) => handleChange("internalPic", e.target.value)} placeholder="Nama PIC Internal" />
+                    {fe("internalPic")}
                   </div>
                 </div>
               </div>
@@ -111,10 +139,12 @@ function ActivityFormContent() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Kapasitas</label>
                       <Input value={form.capacity} onChange={(e) => handleChange("capacity", e.target.value)} placeholder="Contoh: 200 Mbps" />
+                      {fe("capacity")}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Biaya MTC Baru</label>
-                      <Input type="number" value={form.mtcCost} onChange={(e) => handleChange("mtcCost", e.target.value)} placeholder="Masukkan biaya MTC baru" />
+                      <Input value={form.mtcCost} onChange={(e) => onlyDigits("mtcCost", e.target.value)} placeholder="Masukkan biaya MTC baru" />
+                      {fe("mtcCost")}
                     </div>
                   </div>
                 </div>
@@ -126,6 +156,7 @@ function ActivityFormContent() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Alasan</label>
                     <Input value={form.reason} onChange={(e) => handleChange("reason", e.target.value)} placeholder="Masukkan alasan terminate layanan" />
+                    {fe("reason")}
                   </div>
                 </div>
               )}

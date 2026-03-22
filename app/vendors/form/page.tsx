@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getVendorById, createVendor, updateVendor, deleteVendor } from "../actions"
+import { vendorSchema } from "@/lib/validations"
+import type { ZodError } from "zod"
 
 function VendorFormContent() {
   const router = useRouter()
@@ -17,6 +19,7 @@ function VendorFormContent() {
     name: "", address: "", picCommercialName: "", picCommercialPhone: "",
     picTechnicalName: "", picTechnicalPhone: "", npwp: "",
   })
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -38,9 +41,29 @@ function VendorFormContent() {
 
   const handleChange = (field: string, value: string) => {
     setForm({ ...form, [field]: value })
+    if (errors[field]) setErrors({ ...errors, [field]: "" })
+  }
+
+  const onlyDigits = (field: string, value: string) => {
+    handleChange(field, value.replace(/[^0-9]/g, ""))
+  }
+
+  const onlyNpwp = (value: string) => {
+    handleChange("npwp", value.replace(/[^0-9.\-]/g, ""))
   }
 
   const handleSubmit = async () => {
+    try {
+      vendorSchema.parse(form)
+      setErrors({})
+    } catch (err) {
+      const zodErr = err as ZodError
+      const fieldErrors: Record<string, string> = {}
+      zodErr.issues.forEach((e) => { fieldErrors[e.path[0] as string] = e.message })
+      setErrors(fieldErrors)
+      return
+    }
+
     setLoading(true)
     const formData = new FormData()
     Object.entries(form).forEach(([key, value]) => formData.append(key, value))
@@ -58,6 +81,9 @@ function VendorFormContent() {
       await deleteVendor(vendorId)
     }
   }
+
+  const fieldError = (field: string) =>
+    errors[field] ? <p className="text-xs text-red-500 mt-1">{errors[field]}</p> : null
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -81,14 +107,17 @@ function VendorFormContent() {
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nama Vendor</label>
                     <Input value={form.name} onChange={(e) => handleChange("name", e.target.value)} placeholder="Masukkan nama vendor" />
+                    {fieldError("name")}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Alamat Vendor</label>
                     <Input value={form.address} onChange={(e) => handleChange("address", e.target.value)} placeholder="Masukkan alamat lengkap" />
+                    {fieldError("address")}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">No NPWP</label>
-                    <Input value={form.npwp} onChange={(e) => handleChange("npwp", e.target.value)} placeholder="Masukkan nomor NPWP" />
+                    <Input value={form.npwp} onChange={(e) => onlyNpwp(e.target.value)} placeholder="Contoh: 01.234.567.8-901.000" />
+                    {fieldError("npwp")}
                   </div>
                 </div>
               </div>
@@ -99,10 +128,12 @@ function VendorFormContent() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nama PIC Komersial</label>
                     <Input value={form.picCommercialName} onChange={(e) => handleChange("picCommercialName", e.target.value)} placeholder="Masukkan nama PIC" />
+                    {fieldError("picCommercialName")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">No Telepon PIC Komersial</label>
-                    <Input value={form.picCommercialPhone} onChange={(e) => handleChange("picCommercialPhone", e.target.value)} placeholder="Contoh: 08123456789" />
+                    <Input value={form.picCommercialPhone} onChange={(e) => onlyDigits("picCommercialPhone", e.target.value)} placeholder="Contoh: 08123456789" />
+                    {fieldError("picCommercialPhone")}
                   </div>
                 </div>
               </div>
@@ -113,10 +144,12 @@ function VendorFormContent() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Nama PIC Teknikal</label>
                     <Input value={form.picTechnicalName} onChange={(e) => handleChange("picTechnicalName", e.target.value)} placeholder="Masukkan nama PIC" />
+                    {fieldError("picTechnicalName")}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">No Telepon PIC Teknikal</label>
-                    <Input value={form.picTechnicalPhone} onChange={(e) => handleChange("picTechnicalPhone", e.target.value)} placeholder="Contoh: 08123456789" />
+                    <Input value={form.picTechnicalPhone} onChange={(e) => onlyDigits("picTechnicalPhone", e.target.value)} placeholder="Contoh: 08123456789" />
+                    {fieldError("picTechnicalPhone")}
                   </div>
                 </div>
               </div>
@@ -126,9 +159,7 @@ function VendorFormContent() {
                   {loading ? "Saving..." : isEditMode ? "Update Vendor" : "Save Vendor"}
                 </Button>
                 {isEditMode && (
-                  <Button variant="destructive" onClick={handleDelete} disabled={loading} className="w-full sm:w-auto px-8">
-                    Delete Vendor
-                  </Button>
+                  <Button variant="destructive" onClick={handleDelete} disabled={loading} className="w-full sm:w-auto px-8">Delete Vendor</Button>
                 )}
                 <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto px-8">Cancel</Button>
               </div>

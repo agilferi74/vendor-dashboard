@@ -1,10 +1,12 @@
 import { getContracts } from "./actions"
 import { requireAuth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import Sidebar from "@/components/sidebar"
 import { ContractTable } from "./contract-table"
 
 export default async function ContractsPage() {
   const user = await requireAuth()
+  if (user.role === "Finance") redirect("/")
   const contracts = await getContracts()
 
   const serialized = contracts.map((c) => ({
