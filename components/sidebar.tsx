@@ -22,9 +22,11 @@ export default function Sidebar({ role }: { role?: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const authUser = useAuth()
-  const currentRole = role || authUser?.role || "Operasional"
+  const currentRole = role || authUser?.role || ""
 
-  const navItems = allNavItems.filter((item) => item.roles.includes(currentRole))
+  const navItems = currentRole
+    ? allNavItems.filter((item) => item.roles.includes(currentRole))
+    : [allNavItems[0]] // Only dashboard if role unknown
 
   const handleLogout = async () => {
     const supabase = createSupabaseBrowser()
