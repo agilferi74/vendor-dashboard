@@ -47,9 +47,18 @@ export function ServiceDetail({ service, canWrite, canEditInvoice }: Props & { c
   const [loading, setLoading] = useState(false)
 
   const isTerminated = service.contract?.isTerminated || false
-  const isActive = !isTerminated && service.contract
-    ? new Date(service.contract.startDate) <= new Date() && new Date() <= new Date(service.contract.endDate)
-    : false
+
+  const getStatus = () => {
+    if (isTerminated) return { label: "Diberhentikan", variant: "destructive" as const }
+    if (!service.contract) return { label: "Belum Aktif", variant: "secondary" as const }
+    const now = new Date()
+    if (new Date(service.contract.startDate) > now) return { label: "Belum Aktif", variant: "secondary" as const }
+    if (new Date(service.contract.endDate) < now) return { label: "Expired", variant: "outline" as const }
+    return { label: "Active", variant: "default" as const }
+  }
+
+  const status = getStatus()
+  const isActive = status.label === "Active"
 
   const handleTerminate = async () => {
     if (!reason.trim() || !pic.trim()) return
@@ -76,7 +85,7 @@ export function ServiceDetail({ service, canWrite, canEditInvoice }: Props & { c
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-xl sm:text-2xl font-bold">{service.serviceType}</h1>
-            <Badge variant={isActive ? "default" : "destructive"}>{isActive ? "ACTIVE" : "INACTIVE"}</Badge>
+            <Badge variant={status.variant}>{status.label}</Badge>
           </div>
           <p className="text-sm text-gray-600 mt-1">{service.providerServiceId}</p>
         </div>

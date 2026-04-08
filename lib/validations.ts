@@ -64,13 +64,13 @@ export const activitySchema = z.object({
   mtcCost: z.string(),
   reason: z.string(),
 }).refine((data) => {
-  if (data.activityType !== "Terminate") {
+  if (data.activityType === "Upgrade" || data.activityType === "Downgrade") {
     return data.capacity.length >= 1
   }
   return true
 }, { message: "Kapasitas harus diisi", path: ["capacity"] })
 .refine((data) => {
-  if (data.activityType !== "Terminate" && data.mtcCost) {
+  if ((data.activityType === "Upgrade" || data.activityType === "Downgrade") && data.mtcCost) {
     return /^[0-9]*\.?[0-9]+$/.test(data.mtcCost) && Number(data.mtcCost) >= 0
   }
   return true

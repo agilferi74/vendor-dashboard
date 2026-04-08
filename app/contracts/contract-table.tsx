@@ -18,8 +18,9 @@ const formatDate = (s: string) => new Date(s).toLocaleDateString("id-ID", { day:
 const getStatus = (c: ContractItem) => {
   if (c.isTerminated) return { label: "Diberhentikan", variant: "destructive" as const }
   const now = new Date()
-  if (new Date(c.startDate) <= now && now <= new Date(c.endDate)) return { label: "ACTIVE", variant: "default" as const }
-  return { label: "INACTIVE", variant: "destructive" as const }
+  if (new Date(c.startDate) > now) return { label: "Belum Aktif", variant: "secondary" as const }
+  if (new Date(c.endDate) < now) return { label: "Expired", variant: "outline" as const }
+  return { label: "Active", variant: "default" as const }
 }
 
 export function ContractTable({ contracts }: { contracts: ContractItem[] }) {

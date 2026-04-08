@@ -26,11 +26,22 @@ interface ServiceItem {
 
 const ITEMS_PER_PAGE = 5
 
-const isActive = (s: ServiceItem) => {
-  if (s.isTerminated) return false
-  if (!s.contractStartDate || !s.contractEndDate) return false
+type ServiceStatus = "ACTIVE" | "BELUM_AKTIF" | "EXPIRED" | "DIBERHENTIKAN"
+
+const getServiceStatus = (s: ServiceItem): ServiceStatus => {
+  if (s.isTerminated) return "DIBERHENTIKAN"
+  if (!s.contractStartDate || !s.contractEndDate) return "BELUM_AKTIF"
   const now = new Date()
-  return new Date(s.contractStartDate) <= now && now <= new Date(s.contractEndDate)
+  if (new Date(s.contractStartDate) > now) return "BELUM_AKTIF"
+  if (new Date(s.contractEndDate) < now) return "EXPIRED"
+  return "ACTIVE"
+}
+
+const statusConfig: Record<ServiceStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  ACTIVE: { label: "Active", variant: "default" },
+  BELUM_AKTIF: { label: "Belum Aktif", variant: "secondary" },
+  EXPIRED: { label: "Expired", variant: "outline" },
+  DIBERHENTIKAN: { label: "Diberhentikan", variant: "destructive" },
 }
 
 const formatCurrency = (value: number) =>
@@ -44,7 +55,7 @@ const formatDate = (dateString: string) => {
 export function ServiceList({ services, canWrite }: { services: ServiceItem[]; canWrite: boolean }) {
   const router = useRouter()
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL")
+  const [statusFilter, setStatusFilter] = useState("ALL")
   const [currentPage, setCurrentPage] = useState(1)
 
   const filteredServices = useMemo(() => {
@@ -53,11 +64,8 @@ export function ServiceList({ services, canWrite }: { services: ServiceItem[]; c
         s.serviceType.toLowerCase().includes(search.toLowerCase()) ||
         s.providerServiceId.toLowerCase().includes(search.toLowerCase()) ||
         s.location.toLowerCase().includes(search.toLowerCase())
-      const active = isActive(s)
-      const matchStatus =
-        statusFilter === "ALL" ||
-        (statusFilter === "ACTIVE" && active) ||
-        (statusFilter === "INACTIVE" && !active)
+      const status = getServiceStatus(s)
+      const matchStatus = statusFilter === "ALL" || status === statusFilter
       return matchSearch && matchStatus
     })
   }, [services, search, statusFilter])
@@ -77,19 +85,22 @@ export function ServiceList({ services, canWrite }: { services: ServiceItem[]; c
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <Input placeholder="Search service..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }} className="w-full sm:max-w-sm" />
-        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as "ALL" | "ACTIVE" | "INACTIVE"); setCurrentPage(1) }}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1) }}>
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter Status" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Status</SelectItem>
+            <SelectItem value="ALL">Semua Status</SelectItem>
             <SelectItem value="ACTIVE">Active</SelectItem>
-            <SelectItem value="INACTIVE">Inactive</SelectItem>
+            <SelectItem value="BELUM_AKTIF">Belum Aktif</SelectItem>
+            <SelectItem value="EXPIRED">Expired</SelectItem>
+            <SelectItem value="DIBERHENTIKAN">Diberhentikan</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="grid grid-cols-1 gap-4 mb-6">
         {paginatedServices.map((service) => {
-          const active = isActive(service)
+          const status = getServiceStatus(service)
+          const cfg = statusConfig[status]
           return (
             <div key={service.id} className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -97,7 +108,7 @@ export function ServiceList({ services, canWrite }: { services: ServiceItem[]; c
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-gray-900">{service.serviceType}</h3>
-                      <Badge variant={active ? "default" : "destructive"}>{active ? "ACTIVE" : "INACTIVE"}</Badge>
+                      <Badge variant={cfg.variant}>{cfg.label}</Badge>
                     </div>
                     <p className="text-sm text-gray-600">{service.vendorName} • {service.providerServiceId}</p>
                   </div>
