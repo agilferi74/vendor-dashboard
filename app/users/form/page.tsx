@@ -60,6 +60,7 @@ function UserFormContent() {
         await createUser({ name: form.name, email: form.email, password: form.password, role: form.role })
       }
     } catch (err) {
+      if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err
       setServerError(err instanceof Error ? err.message : "Terjadi kesalahan")
       setLoading(false)
     }
