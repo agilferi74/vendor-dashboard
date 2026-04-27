@@ -1,11 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { FileText } from "lucide-react"
+import { Pagination } from "@/components/ui/pagination"
+import { SortableHeader, useSort, sortData } from "@/components/ui/sortable-header"
 
 interface ContractItem {
   id: string; title: string; providerServiceId: string; serviceType: string
@@ -26,6 +27,7 @@ const getStatus = (c: ContractItem) => {
 export function ContractTable({ contracts }: { contracts: ContractItem[] }) {
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const { sortConfig, handleSort } = useSort()
 
   const filtered = useMemo(() => {
     return contracts.filter((c) =>
@@ -35,8 +37,19 @@ export function ContractTable({ contracts }: { contracts: ContractItem[] }) {
     )
   }, [contracts, search])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  const sorted = useMemo(() => sortData(filtered, sortConfig, (item, key) => {
+    switch (key) {
+      case "title": return item.title
+      case "providerServiceId": return item.providerServiceId
+      case "serviceType": return item.serviceType
+      case "startDate": return item.startDate
+      case "endDate": return item.endDate
+      default: return ""
+    }
+  }), [filtered, sortConfig])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE))
+  const paginated = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
     <>
@@ -53,8 +66,13 @@ export function ContractTable({ contracts }: { contracts: ContractItem[] }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Judul Kontrak</TableHead><TableHead>ID Layanan</TableHead><TableHead>Jenis Layanan</TableHead>
-                <TableHead>Status</TableHead><TableHead>Tanggal Mulai</TableHead><TableHead>Tanggal Berakhir</TableHead><TableHead>Dokumen</TableHead>
+                <SortableHeader label="Judul Kontrak" sortKey="title" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="ID Layanan" sortKey="providerServiceId" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Jenis Layanan" sortKey="serviceType" sortConfig={sortConfig} onSort={handleSort} />
+                <th className="p-2 text-sm font-medium text-muted-foreground">Status</th>
+                <SortableHeader label="Tanggal Mulai" sortKey="startDate" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Tanggal Berakhir" sortKey="endDate" sortConfig={sortConfig} onSort={handleSort} />
+                <th className="p-2 text-sm font-medium text-muted-foreground">Dokumen</th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -87,13 +105,7 @@ export function ContractTable({ contracts }: { contracts: ContractItem[] }) {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-6">
-        <span className="text-sm order-2 sm:order-1">Page {currentPage} of {totalPages}</span>
-        <div className="flex gap-2 order-1 sm:order-2">
-          <Button variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="w-20">Prev</Button>
-          <Button variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="w-20">Next</Button>
-        </div>
-      </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </>
   )
 }

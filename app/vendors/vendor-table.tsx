@@ -4,9 +4,11 @@ import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table, TableBody, TableCell, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { useRouter } from "next/navigation"
+import { Pagination } from "@/components/ui/pagination"
+import { SortableHeader, useSort, sortData } from "@/components/ui/sortable-header"
 
 interface Vendor {
   id: string
@@ -25,8 +27,9 @@ export function VendorTable({ vendors, canWrite }: { vendors: Vendor[]; canWrite
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const { sortConfig, handleSort } = useSort()
 
-  const filteredVendors = useMemo(() => {
+  const filtered = useMemo(() => {
     return vendors.filter((v) =>
       v.name.toLowerCase().includes(search.toLowerCase()) ||
       v.npwp.toLowerCase().includes(search.toLowerCase()) ||
@@ -37,46 +40,48 @@ export function VendorTable({ vendors, canWrite }: { vendors: Vendor[]; canWrite
     )
   }, [vendors, search])
 
-  const totalPages = Math.ceil(filteredVendors.length / ITEMS_PER_PAGE)
-  const paginatedVendors = filteredVendors.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  )
+  const sorted = useMemo(() => sortData(filtered, sortConfig, (item, key) => {
+    switch (key) {
+      case "name": return item.name
+      case "address": return item.address
+      case "picCommercialName": return item.picCommercialName
+      case "picTechnicalName": return item.picTechnicalName
+      case "npwp": return item.npwp
+      default: return ""
+    }
+  }), [filtered, sortConfig])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE))
+  const paginated = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Vendor Management</h1>
         {canWrite && (
-          <Button onClick={() => router.push("/vendors/form")} className="w-full sm:w-auto">
-            + Add Vendor
-          </Button>
+          <Button onClick={() => router.push("/vendors/form")} className="w-full sm:w-auto">+ Add Vendor</Button>
         )}
       </div>
 
       <div className="mb-6">
-        <Input
-          placeholder="Search by name, NPWP, or PIC..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }}
-          className="w-full sm:max-w-sm"
-        />
+        <Input placeholder="Search by name, NPWP, or PIC..." value={search}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }} className="w-full sm:max-w-sm" />
       </div>
 
       <div className="border rounded-lg overflow-x-auto bg-white">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="whitespace-nowrap">Nama Vendor</TableHead>
-              <TableHead className="whitespace-nowrap">Alamat</TableHead>
-              <TableHead className="whitespace-nowrap">PIC Komersial</TableHead>
-              <TableHead className="whitespace-nowrap">PIC Teknikal</TableHead>
-              <TableHead className="whitespace-nowrap">NPWP</TableHead>
-              <TableHead className="whitespace-nowrap">Actions</TableHead>
+              <SortableHeader label="Nama Vendor" sortKey="name" sortConfig={sortConfig} onSort={handleSort} className="whitespace-nowrap" />
+              <SortableHeader label="Alamat" sortKey="address" sortConfig={sortConfig} onSort={handleSort} className="whitespace-nowrap" />
+              <SortableHeader label="PIC Komersial" sortKey="picCommercialName" sortConfig={sortConfig} onSort={handleSort} className="whitespace-nowrap" />
+              <SortableHeader label="PIC Teknikal" sortKey="picTechnicalName" sortConfig={sortConfig} onSort={handleSort} className="whitespace-nowrap" />
+              <SortableHeader label="NPWP" sortKey="npwp" sortConfig={sortConfig} onSort={handleSort} className="whitespace-nowrap" />
+              <th className="whitespace-nowrap p-2 text-sm font-medium text-muted-foreground">Actions</th>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedVendors.map((vendor) => (
+            {paginated.map((vendor) => (
               <TableRow key={vendor.id}>
                 <TableCell className="font-medium whitespace-nowrap">{vendor.name}</TableCell>
                 <TableCell className="max-w-xs truncate">{vendor.address}</TableCell>
@@ -95,9 +100,7 @@ export function VendorTable({ vendors, canWrite }: { vendors: Vendor[]; canWrite
                 <TableCell className="whitespace-nowrap">{vendor.npwp}</TableCell>
                 <TableCell className="whitespace-nowrap">
                   {canWrite && (
-                    <Button size="sm" variant="outline" onClick={() => router.push(`/vendors/form?id=${vendor.id}`)}>
-                      Edit
-                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => router.push(`/vendors/form?id=${vendor.id}`)}>Edit</Button>
                   )}
                 </TableCell>
               </TableRow>
@@ -106,13 +109,7 @@ export function VendorTable({ vendors, canWrite }: { vendors: Vendor[]; canWrite
         </Table>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-6">
-        <span className="text-sm order-2 sm:order-1">Page {currentPage} of {totalPages}</span>
-        <div className="flex gap-2 order-1 sm:order-2">
-          <Button variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="w-20">Prev</Button>
-          <Button variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="w-20">Next</Button>
-        </div>
-      </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </>
   )
 }

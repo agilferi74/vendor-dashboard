@@ -103,10 +103,16 @@ export const invoiceCreateSchema = z.object({
 export const invoiceEditSchema = z.object({
   invoiceNumber: z.string().optional().or(z.literal("")),
   paidAmount: z.string().regex(/^[0-9]*\.?[0-9]*$/, "Hanya boleh angka").optional().or(z.literal("")),
+  invoiceAmount: z.string().optional().or(z.literal("")),
   invoiceDate: z.string().optional().or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
   paymentDate: z.string().optional().or(z.literal("")),
-})
+}).refine((data) => {
+  if (data.paidAmount && data.invoiceAmount) {
+    return Number(data.paidAmount) <= Number(data.invoiceAmount)
+  }
+  return true
+}, { message: "Nilai terbayar tidak boleh melebihi nilai invoice", path: ["paidAmount"] })
 
 // User
 export const userCreateSchema = z.object({

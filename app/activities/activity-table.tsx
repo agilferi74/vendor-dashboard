@@ -4,10 +4,12 @@ import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
 import { FileText } from "lucide-react"
+import { Pagination } from "@/components/ui/pagination"
+import { SortableHeader, useSort, sortData } from "@/components/ui/sortable-header"
 
 interface ActivityItem {
   id: string
@@ -45,6 +47,7 @@ export function ActivityTable({ activities, canWrite }: { activities: ActivityIt
   const [search, setSearch] = useState("")
   const [typeFilter, setTypeFilter] = useState("ALL")
   const [currentPage, setCurrentPage] = useState(1)
+  const { sortConfig, handleSort } = useSort()
 
   const filtered = useMemo(() => {
     return activities.filter((act) => {
@@ -57,8 +60,22 @@ export function ActivityTable({ activities, canWrite }: { activities: ActivityIt
     })
   }, [activities, search, typeFilter])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  const sorted = useMemo(() => sortData(filtered, sortConfig, (item, key) => {
+    switch (key) {
+      case "providerServiceId": return item.providerServiceId
+      case "serviceType": return item.serviceType
+      case "vendorName": return item.vendorName
+      case "activityType": return item.activityType
+      case "startDate": return item.startDate
+      case "internalPic": return item.internalPic
+      case "capacity": return item.capacity
+      case "mtcCost": return item.mtcCost
+      default: return ""
+    }
+  }), [filtered, sortConfig])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE))
+  const paginated = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
     <>
@@ -86,9 +103,16 @@ export function ActivityTable({ activities, canWrite }: { activities: ActivityIt
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID Layanan</TableHead><TableHead>Jenis Layanan</TableHead><TableHead>Vendor</TableHead>
-                <TableHead>Jenis Aktivitas</TableHead><TableHead>Tanggal Mulai</TableHead><TableHead>PIC Internal</TableHead>
-                <TableHead>Kapasitas</TableHead><TableHead className="text-right">Biaya MTC</TableHead><TableHead>Keterangan</TableHead><TableHead>Dokumen</TableHead>
+                <SortableHeader label="ID Layanan" sortKey="providerServiceId" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Jenis Layanan" sortKey="serviceType" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Vendor" sortKey="vendorName" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Jenis Aktivitas" sortKey="activityType" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Tanggal Mulai" sortKey="startDate" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="PIC Internal" sortKey="internalPic" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Kapasitas" sortKey="capacity" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Biaya MTC" sortKey="mtcCost" sortConfig={sortConfig} onSort={handleSort} className="text-right" />
+                <th className="p-2 text-sm font-medium text-muted-foreground">Keterangan</th>
+                <th className="p-2 text-sm font-medium text-muted-foreground">Dokumen</th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -121,13 +145,7 @@ export function ActivityTable({ activities, canWrite }: { activities: ActivityIt
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-6">
-        <span className="text-sm order-2 sm:order-1">Page {currentPage} of {totalPages}</span>
-        <div className="flex gap-2 order-1 sm:order-2">
-          <Button variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="w-20">Prev</Button>
-          <Button variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="w-20">Next</Button>
-        </div>
-      </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </>
   )
 }

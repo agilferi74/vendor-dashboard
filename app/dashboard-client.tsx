@@ -1,16 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table, TableBody, TableCell, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { useRouter } from "next/navigation"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts"
+import { Pagination } from "@/components/ui/pagination"
+import { SortableHeader, useSort, sortData } from "@/components/ui/sortable-header"
 
 const PER_PAGE = 5
 const EXPIRING_DAYS = 60
@@ -49,6 +51,8 @@ type DashboardProps = {
   expiringContracts: ExpiringContract[]
   monthlyExpenses: MonthlyExpense[]
   canEditInvoice: boolean
+  canViewInvoices: boolean
+  canViewServices: boolean
 }
 
 const formatCurrency = (value: number) =>
@@ -69,18 +73,43 @@ export default function DashboardClient(props: DashboardProps) {
   const router = useRouter()
   const [unpaidPage, setUnpaidPage] = useState(1)
   const [expiringPage, setExpiringPage] = useState(1)
+  const { sortConfig: unpaidSort, handleSort: handleUnpaidSort } = useSort()
+  const { sortConfig: expiringSort, handleSort: handleExpiringSort } = useSort()
   const now = new Date()
 
   const {
     activeServicesCount, totalServicesCount, unpaidCount, overdueCount,
-    expiringCount, totalOutstanding, unpaidInvoices, expiringContracts, monthlyExpenses, canEditInvoice,
+    expiringCount, totalOutstanding, unpaidInvoices, expiringContracts, monthlyExpenses, canEditInvoice, canViewInvoices, canViewServices,
   } = props
 
-  const unpaidTotalPages = Math.max(1, Math.ceil(unpaidInvoices.length / PER_PAGE))
-  const paginatedUnpaid = unpaidInvoices.slice((unpaidPage - 1) * PER_PAGE, unpaidPage * PER_PAGE)
+  const sortedUnpaid = useMemo(() => sortData(unpaidInvoices, unpaidSort, (item, key) => {
+    switch (key) {
+      case "invoiceNumber": return item.invoiceNumber
+      case "providerServiceId": return item.providerServiceId
+      case "paymentType": return item.paymentType
+      case "period": return item.period
+      case "outstanding": return item.invoiceAmount - item.paidAmount
+      case "dueDate": return item.dueDate
+      default: return ""
+    }
+  }), [unpaidInvoices, unpaidSort])
 
-  const expiringTotalPages = Math.max(1, Math.ceil(expiringContracts.length / PER_PAGE))
-  const paginatedExpiring = expiringContracts.slice((expiringPage - 1) * PER_PAGE, expiringPage * PER_PAGE)
+  const unpaidTotalPages = Math.max(1, Math.ceil(sortedUnpaid.length / PER_PAGE))
+  const paginatedUnpaid = sortedUnpaid.slice((unpaidPage - 1) * PER_PAGE, unpaidPage * PER_PAGE)
+
+  const sortedExpiring = useMemo(() => sortData(expiringContracts, expiringSort, (item, key) => {
+    switch (key) {
+      case "providerServiceId": return item.providerServiceId
+      case "serviceType": return item.serviceType
+      case "vendorName": return item.vendorName
+      case "location": return item.location
+      case "endDate": return item.endDate
+      default: return ""
+    }
+  }), [expiringContracts, expiringSort])
+
+  const expiringTotalPages = Math.max(1, Math.ceil(sortedExpiring.length / PER_PAGE))
+  const paginatedExpiring = sortedExpiring.slice((expiringPage - 1) * PER_PAGE, expiringPage * PER_PAGE)
 
   const getDaysUntil = (dateString: string) =>
     Math.ceil((new Date(dateString).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
@@ -145,21 +174,21 @@ export default function DashboardClient(props: DashboardProps) {
       <div className="mt-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
           <h2 className="text-lg sm:text-xl font-semibold">Invoice Belum Bayar</h2>
-          <Button variant="outline" size="sm" onClick={() => router.push("/invoices")}>Lihat Semua</Button>
+          {canViewInvoices && <Button variant="outline" size="sm" onClick={() => router.push("/invoices")}>Lihat Semua</Button>}
         </div>
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No. Invoice</TableHead>
-                  <TableHead>Layanan</TableHead>
-                  <TableHead>Jenis</TableHead>
-                  <TableHead>Periode</TableHead>
-                  <TableHead className="text-right">Nilai</TableHead>
-                  <TableHead>Jatuh Tempo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <SortableHeader label="No. Invoice" sortKey="invoiceNumber" sortConfig={unpaidSort} onSort={handleUnpaidSort} />
+                  <SortableHeader label="Layanan" sortKey="providerServiceId" sortConfig={unpaidSort} onSort={handleUnpaidSort} />
+                  <SortableHeader label="Jenis" sortKey="paymentType" sortConfig={unpaidSort} onSort={handleUnpaidSort} />
+                  <SortableHeader label="Periode" sortKey="period" sortConfig={unpaidSort} onSort={handleUnpaidSort} />
+                  <SortableHeader label="Nilai" sortKey="outstanding" sortConfig={unpaidSort} onSort={handleUnpaidSort} className="text-right" />
+                  <SortableHeader label="Jatuh Tempo" sortKey="dueDate" sortConfig={unpaidSort} onSort={handleUnpaidSort} />
+                  <th className="p-2 text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="p-2 text-sm font-medium text-muted-foreground text-right">Actions</th>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -203,13 +232,7 @@ export default function DashboardClient(props: DashboardProps) {
           </div>
         </div>
         {unpaidInvoices.length > PER_PAGE && (
-          <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-4">
-            <span className="text-sm order-2 sm:order-1">Page {unpaidPage} of {unpaidTotalPages}</span>
-            <div className="flex gap-2 order-1 sm:order-2">
-              <Button variant="outline" disabled={unpaidPage === 1} onClick={() => setUnpaidPage((p) => p - 1)} className="w-20">Prev</Button>
-              <Button variant="outline" disabled={unpaidPage === unpaidTotalPages} onClick={() => setUnpaidPage((p) => p + 1)} className="w-20">Next</Button>
-            </div>
-          </div>
+          <Pagination currentPage={unpaidPage} totalPages={unpaidTotalPages} onPageChange={setUnpaidPage} />
         )}
       </div>
 
@@ -217,20 +240,20 @@ export default function DashboardClient(props: DashboardProps) {
       <div className="mt-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
           <h2 className="text-lg sm:text-xl font-semibold">Layanan Akan Berakhir</h2>
-          <Button variant="outline" size="sm" onClick={() => router.push("/services")}>Lihat Semua</Button>
+          {canViewServices && <Button variant="outline" size="sm" onClick={() => router.push("/services")}>Lihat Semua</Button>}
         </div>
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID Layanan</TableHead>
-                  <TableHead>Jenis Layanan</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Lokasi</TableHead>
-                  <TableHead>Tanggal Berakhir</TableHead>
-                  <TableHead>Sisa Hari</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <SortableHeader label="ID Layanan" sortKey="providerServiceId" sortConfig={expiringSort} onSort={handleExpiringSort} />
+                  <SortableHeader label="Jenis Layanan" sortKey="serviceType" sortConfig={expiringSort} onSort={handleExpiringSort} />
+                  <SortableHeader label="Vendor" sortKey="vendorName" sortConfig={expiringSort} onSort={handleExpiringSort} />
+                  <SortableHeader label="Lokasi" sortKey="location" sortConfig={expiringSort} onSort={handleExpiringSort} />
+                  <SortableHeader label="Tanggal Berakhir" sortKey="endDate" sortConfig={expiringSort} onSort={handleExpiringSort} />
+                  <th className="p-2 text-sm font-medium text-muted-foreground">Sisa Hari</th>
+                  <th className="p-2 text-sm font-medium text-muted-foreground text-right">Actions</th>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -252,7 +275,7 @@ export default function DashboardClient(props: DashboardProps) {
                           <Badge variant={daysLeft <= 30 ? "destructive" : "secondary"}>{daysLeft} hari</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="outline" onClick={() => router.push(`/services/${c.serviceId}`)}>Detail</Button>
+                          {canViewServices && <Button size="sm" variant="outline" onClick={() => router.push(`/services/${c.serviceId}`)}>Detail</Button>}
                         </TableCell>
                       </TableRow>
                     )
@@ -263,13 +286,7 @@ export default function DashboardClient(props: DashboardProps) {
           </div>
         </div>
         {expiringContracts.length > PER_PAGE && (
-          <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-4">
-            <span className="text-sm order-2 sm:order-1">Page {expiringPage} of {expiringTotalPages}</span>
-            <div className="flex gap-2 order-1 sm:order-2">
-              <Button variant="outline" disabled={expiringPage === 1} onClick={() => setExpiringPage((p) => p - 1)} className="w-20">Prev</Button>
-              <Button variant="outline" disabled={expiringPage === expiringTotalPages} onClick={() => setExpiringPage((p) => p + 1)} className="w-20">Next</Button>
-            </div>
-          </div>
+          <Pagination currentPage={expiringPage} totalPages={expiringTotalPages} onPageChange={setExpiringPage} />
         )}
       </div>
     </>

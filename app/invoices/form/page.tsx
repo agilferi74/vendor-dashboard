@@ -66,7 +66,21 @@ function InvoiceFormContent() {
   }
 
   const onlyDigits = (field: string, value: string) => {
-    handleChange(field, value.replace(/[^0-9.]/g, ""))
+    const cleaned = value.replace(/[^0-9.]/g, "")
+    const newForm = { ...form, [field]: cleaned }
+    setForm(newForm)
+
+    // Real-time cross-field validation: paidAmount vs invoiceAmount
+    const newErrors = { ...errors }
+    if (errors[field]) delete newErrors[field]
+
+    if (newForm.paidAmount && newForm.invoiceAmount && Number(newForm.paidAmount) > Number(newForm.invoiceAmount)) {
+      newErrors["paidAmount"] = "Nilai terbayar tidak boleh melebihi nilai invoice"
+    } else if (field === "paidAmount" || field === "invoiceAmount") {
+      delete newErrors["paidAmount"]
+    }
+
+    setErrors(newErrors)
   }
 
   const handleServiceChange = async (serviceId: string) => {
@@ -83,6 +97,7 @@ function InvoiceFormContent() {
         invoiceEditSchema.parse({
           invoiceNumber: form.invoiceNumber,
           paidAmount: form.paidAmount,
+          invoiceAmount: form.invoiceAmount,
           invoiceDate: form.invoiceDate,
           dueDate: form.dueDate,
           paymentDate: form.paymentDate,
@@ -95,6 +110,12 @@ function InvoiceFormContent() {
       const zodErr = err as ZodError
       const fieldErrors: Record<string, string> = {}
       zodErr.issues.forEach((e) => { fieldErrors[e.path[0] as string] = e.message })
+
+      // Always check paidAmount > invoiceAmount regardless of other field errors
+      if (form.paidAmount && form.invoiceAmount && Number(form.paidAmount) > Number(form.invoiceAmount)) {
+        fieldErrors["paidAmount"] = "Nilai terbayar tidak boleh melebihi nilai invoice"
+      }
+
       setErrors(fieldErrors)
       return
     }

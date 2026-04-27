@@ -4,10 +4,12 @@ import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
 import { FileText } from "lucide-react"
+import { Pagination } from "@/components/ui/pagination"
+import { SortableHeader, useSort, sortData } from "@/components/ui/sortable-header"
 
 interface InvoiceItem {
   id: string; providerServiceId: string; serviceType: string; paymentType: string
@@ -29,6 +31,7 @@ export function InvoiceTable({ invoices, canWrite, canCreate }: { invoices: Invo
   const [typeFilter, setTypeFilter] = useState("ALL")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [currentPage, setCurrentPage] = useState(1)
+  const { sortConfig, handleSort } = useSort()
 
   const filtered = useMemo(() => {
     return invoices.filter((inv) => {
@@ -46,8 +49,23 @@ export function InvoiceTable({ invoices, canWrite, canCreate }: { invoices: Invo
     })
   }, [invoices, search, typeFilter, statusFilter])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  const sorted = useMemo(() => sortData(filtered, sortConfig, (item, key) => {
+    switch (key) {
+      case "invoiceNumber": return item.invoiceNumber
+      case "providerServiceId": return item.providerServiceId
+      case "paymentType": return item.paymentType
+      case "period": return item.period
+      case "invoiceAmount": return item.invoiceAmount
+      case "paidAmount": return item.paidAmount
+      case "invoiceDate": return item.invoiceDate
+      case "dueDate": return item.dueDate
+      case "paymentDate": return item.paymentDate
+      default: return ""
+    }
+  }), [filtered, sortConfig])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE))
+  const paginated = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   const getStatusBadge = (inv: InvoiceItem) => {
     if (inv.paidAmount >= inv.invoiceAmount) return <Badge variant="default">Lunas</Badge>
@@ -88,11 +106,18 @@ export function InvoiceTable({ invoices, canWrite, canCreate }: { invoices: Invo
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>No. Invoice</TableHead><TableHead>ID Layanan</TableHead><TableHead>Jenis</TableHead>
-                <TableHead>Periode</TableHead><TableHead className="text-right">Nilai Invoice</TableHead>
-                <TableHead className="text-right">Terbayar</TableHead><TableHead>Tgl Invoice</TableHead>
-                <TableHead>Jatuh Tempo</TableHead><TableHead>Tgl Bayar</TableHead><TableHead>Status</TableHead>
-                <TableHead>Dokumen</TableHead><TableHead className="text-right">Actions</TableHead>
+                <SortableHeader label="No. Invoice" sortKey="invoiceNumber" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="ID Layanan" sortKey="providerServiceId" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Jenis" sortKey="paymentType" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Periode" sortKey="period" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Nilai Invoice" sortKey="invoiceAmount" sortConfig={sortConfig} onSort={handleSort} className="text-right" />
+                <SortableHeader label="Terbayar" sortKey="paidAmount" sortConfig={sortConfig} onSort={handleSort} className="text-right" />
+                <SortableHeader label="Tgl Invoice" sortKey="invoiceDate" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Jatuh Tempo" sortKey="dueDate" sortConfig={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Tgl Bayar" sortKey="paymentDate" sortConfig={sortConfig} onSort={handleSort} />
+                <th className="p-2 text-sm font-medium text-muted-foreground">Status</th>
+                <th className="p-2 text-sm font-medium text-muted-foreground">Dokumen</th>
+                <th className="p-2 text-sm font-medium text-muted-foreground text-right">Actions</th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -132,13 +157,7 @@ export function InvoiceTable({ invoices, canWrite, canCreate }: { invoices: Invo
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-6">
-        <span className="text-sm order-2 sm:order-1">Page {currentPage} of {totalPages}</span>
-        <div className="flex gap-2 order-1 sm:order-2">
-          <Button variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="w-20">Prev</Button>
-          <Button variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="w-20">Next</Button>
-        </div>
-      </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </>
   )
 }

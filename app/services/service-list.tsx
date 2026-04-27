@@ -8,6 +8,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
+import { Pagination } from "@/components/ui/pagination"
+import { useSort, sortData } from "@/components/ui/sortable-header"
 
 interface ServiceItem {
   id: string
@@ -57,21 +59,38 @@ export function ServiceList({ services, canWrite }: { services: ServiceItem[]; c
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [currentPage, setCurrentPage] = useState(1)
+  const { sortConfig, setSortConfig } = useSort()
 
   const filteredServices = useMemo(() => {
     return services.filter((s) => {
+      const q = search.toLowerCase()
       const matchSearch =
-        s.serviceType.toLowerCase().includes(search.toLowerCase()) ||
-        s.providerServiceId.toLowerCase().includes(search.toLowerCase()) ||
-        s.location.toLowerCase().includes(search.toLowerCase())
+        s.serviceType.toLowerCase().includes(q) ||
+        s.providerServiceId.toLowerCase().includes(q) ||
+        s.location.toLowerCase().includes(q) ||
+        s.vendorName.toLowerCase().includes(q) ||
+        s.capacity.toLowerCase().includes(q) ||
+        s.internalPic.toLowerCase().includes(q)
       const status = getServiceStatus(s)
       const matchStatus = statusFilter === "ALL" || status === statusFilter
       return matchSearch && matchStatus
     })
   }, [services, search, statusFilter])
 
-  const totalPages = Math.max(1, Math.ceil(filteredServices.length / ITEMS_PER_PAGE))
-  const paginatedServices = filteredServices.slice(
+  const sortedServices = useMemo(() => sortData(filteredServices, sortConfig, (item, key) => {
+    switch (key) {
+      case "serviceType": return item.serviceType
+      case "vendorName": return item.vendorName
+      case "location": return item.location
+      case "otpCost": return item.otpCost
+      case "mtcCost": return item.mtcCost
+      case "contractEndDate": return item.contractEndDate
+      default: return ""
+    }
+  }), [filteredServices, sortConfig])
+
+  const totalPages = Math.max(1, Math.ceil(sortedServices.length / ITEMS_PER_PAGE))
+  const paginatedServices = sortedServices.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
@@ -93,6 +112,27 @@ export function ServiceList({ services, canWrite }: { services: ServiceItem[]; c
             <SelectItem value="BELUM_AKTIF">Belum Aktif</SelectItem>
             <SelectItem value="EXPIRED">Expired</SelectItem>
             <SelectItem value="DIBERHENTIKAN">Diberhentikan</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortConfig.key ? `${sortConfig.key}-${sortConfig.direction}` : "default"} onValueChange={(v) => {
+          if (v === "default") { setSortConfig({ key: "", direction: null }) } else {
+            const parts = v.split("-")
+            const dir = parts.pop() as "asc" | "desc"
+            const key = parts.join("-")
+            setSortConfig({ key, direction: dir })
+          }
+        }}>
+          <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Urutkan" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Default</SelectItem>
+            <SelectItem value="serviceType-asc">Nama A-Z</SelectItem>
+            <SelectItem value="serviceType-desc">Nama Z-A</SelectItem>
+            <SelectItem value="vendorName-asc">Vendor A-Z</SelectItem>
+            <SelectItem value="vendorName-desc">Vendor Z-A</SelectItem>
+            <SelectItem value="mtcCost-asc">Biaya MTC Terendah</SelectItem>
+            <SelectItem value="mtcCost-desc">Biaya MTC Tertinggi</SelectItem>
+            <SelectItem value="contractEndDate-asc">Kontrak Berakhir Terdekat</SelectItem>
+            <SelectItem value="contractEndDate-desc">Kontrak Berakhir Terjauh</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -137,13 +177,7 @@ export function ServiceList({ services, canWrite }: { services: ServiceItem[]; c
         })}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-center gap-4 mt-6">
-        <span className="text-sm order-2 sm:order-1">Page {currentPage} of {totalPages}</span>
-        <div className="flex gap-2 order-1 sm:order-2">
-          <Button variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="w-20">Prev</Button>
-          <Button variant="outline" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="w-20">Next</Button>
-        </div>
-      </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </>
   )
 }
